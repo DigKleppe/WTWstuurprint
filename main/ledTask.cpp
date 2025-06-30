@@ -141,6 +141,6 @@ void LED2task(void *pvParameters) {
 
 void startLEDs() {
     led_strip_install();
-	xTaskCreate(LED1task, "LED1task", 3000, NULL, 5, NULL);
-    xTaskCreate(LED2task, "LED2task", 3000, NULL, 5, NULL);
+	xTaskCreate(LED1task, "LED1task", 3000, NULL, tskIDLE_PRIORITY, NULL);
+    xTaskCreate(LED2task, "LED2task", 3000, NULL, tskIDLE_PRIORITY, NULL);
 }

@@ -45,10 +45,10 @@ const static char http_html_hdr[] = "HTTP/1.1 200 OK\nContent-type: text/html\n\
 int readDescriptors(char *pBuffer, int count);
 
 
-void parseCGIWriteData(char *buf, int received)
-{
-	//parseCGIsettings(buf, received);
-}
+// void parseCGIWriteData(char *buf, int received)
+// {
+// 	//parseCGIsettings(buf, received);
+// }
 
 
 static const CGIdesc_t CGIdescriptors[] = {

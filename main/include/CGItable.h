@@ -10,5 +10,4 @@
 
 extern const tCGI CGIurls[];
 
-
 #endif /* MAIN_INCLUDE_CGITABLE_H_ */
