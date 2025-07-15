@@ -26,9 +26,9 @@ static const char *TAG = "sensorTask";
 
 #define SENSORMSSG_TIMEOUT 1000 // wait 1 sec
 #define UDPSENSORPORT 5050
-#define MAXLEN 		128 
+#define MAXLEN 128
 
-const char * getFirmWareVersion ();
+const char *getFirmWareVersion();
 extern int scriptState;
 
 typedef struct {
@@ -51,20 +51,16 @@ void sensorTask(void *pvParameters) {
 	time_t now = 0;
 	struct tm timeinfo;
 
-	const udpTaskParams_t udpTaskParams = {
-		.port = UDPSENSORPORT,
-		.maxLen = MAXLEN
-	};
+	const udpTaskParams_t udpTaskParams = {.port = UDPSENSORPORT, .maxLen = MAXLEN};
 
-	xTaskCreate(udpServerTask, "udpServerTask", configMINIMAL_STACK_SIZE * 5, (void *) &udpTaskParams, 5, NULL);
+	xTaskCreate(udpServerTask, "udpServerTask", configMINIMAL_STACK_SIZE * 5, (void *)&udpTaskParams, 5, NULL);
 	vTaskDelay(100);
 
 	while (1) {
 		if (xQueueReceive(udpMssgBox, &udpMssg, 0)) { // wait for messages from sensors to arrive
 			if (udpMssg.mssg) {
 				ESP_LOGI(TAG, "%s", udpMssg.mssg);
-				if (sscanf(udpMssg.mssg, "S%d,%f,%f,%f,%d", &sensorNr, &sensorMssg.co2, &sensorMssg.temperature, &sensorMssg.hum, &sensorMssg.rssi) ==
-					5) {
+				if (sscanf(udpMssg.mssg, "S%d,%f,%f,%f,%d", &sensorNr, &sensorMssg.co2, &sensorMssg.temperature, &sensorMssg.hum, &sensorMssg.rssi) == 5) {
 					if ((sensorNr > 0) && (sensorNr < 4)) { // add values to temporary log
 						tempLog.co2[sensorNr] = sensorMssg.co2;
 						tempLog.temperature[sensorNr] = sensorMssg.temperature;
@@ -91,7 +87,6 @@ void sensorTask(void *pvParameters) {
 		vTaskDelay(10);
 	}
 }
-
 
 // CGI stuff
 
@@ -136,10 +131,10 @@ int getInfoValuesScript(char *pBuffer, int count) {
 		// len += sprintf(pBuffer + len, "%s,%3.0f\n", "CO2", lastVal.co2);
 		// len += sprintf(pBuffer + len, "%s,%3.2f\n", "temperatuur", lastVal.temperature);
 		// len += sprintf(pBuffer + len, "%s,%3.0f\n", "Vochtigheid", lastVal.hum);
-		 return len;
+		return len;
 	case 1:
 		scriptState++;
-//		len = sprintf(pBuffer + len, "%s,%1.2f\n", "temperatuur offset", userSettings.temperatureOffset);
+		//		len = sprintf(pBuffer + len, "%s,%1.2f\n", "temperatuur offset", userSettings.temperatureOffset);
 		len += sprintf(pBuffer + len, "%s,%d\n", "RSSI", getRssi());
 		len += sprintf(pBuffer + len, "%s,%s\n", "firmwareversie", getFirmWareVersion());
 		len += sprintf(pBuffer + len, "%s,%s\n", "SPIFFS versie", wifiSettings.SPIFFSversion);

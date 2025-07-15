@@ -56,7 +56,7 @@ void udpServerTask(void *pvParameters) {
 				closesocket(sockfd);
 			} else {
 				int len, n;
-				ESP_LOGI(TAG, "server running");
+		//		ESP_LOGI(TAG, "server running");
 				len = sizeof(cliaddr); // len is value/result
 
 				buffer = (char *)malloc((size_t)udpTaskParams.maxLen + 1);
@@ -67,13 +67,11 @@ void udpServerTask(void *pvParameters) {
 				} else {
 					n = recvfrom(sockfd, buffer, udpTaskParams.maxLen, MSG_WAITALL, (struct sockaddr *)&cliaddr, (socklen_t *)&len);
 					buffer[n] = '\0';
-
-					ESP_LOGI(TAG, "Received: %s", buffer);
+			//		ESP_LOGI(TAG, "Received: %s", buffer);
 				}
 				udpMssg.len = n;
 				udpMssg.mssg = buffer;
-				void *pmsg = &udpMssg;
-				xQueueSendToBack(udpMssgBox, &pmsg, 0);
+				xQueueSendToBack(udpMssgBox, &udpMssg, 0);
 				closesocket(sockfd);
 			}
 		}
