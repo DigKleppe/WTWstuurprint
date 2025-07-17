@@ -21,7 +21,7 @@ typedef struct {
 	float hum[4];
 } log_t;
 
-static log_t lastVal;
+
 
 extern int logRxIdx;
 extern int logTxIdx;

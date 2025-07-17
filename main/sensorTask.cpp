@@ -30,6 +30,7 @@ static const char *TAG = "sensorTask";
 
 const char *getFirmWareVersion();
 extern int scriptState;
+log_t lastVal;
 
 typedef struct {
 	float co2;
@@ -38,6 +39,46 @@ typedef struct {
 	int rssi;
 	//	int seqNr;
 } sensorMssg_t;
+
+char buf[500];
+
+void testLog(void) {
+	log_t tempLog;
+	tempLog.co2[0] = 450;
+	tempLog.co2[1] = 460;
+	tempLog.co2[2] = 470;
+	tempLog.co2[3] = 480;
+	tempLog.hum[0] = 40;
+	tempLog.hum[1] = 50;
+	tempLog.hum[2] = 60;
+	tempLog.hum[3] = 70;
+	tempLog.temperature[0] = 20;
+	tempLog.temperature[1] = 22;
+	tempLog.temperature[2] = 24;
+	tempLog.temperature[3] = 26;
+
+	for (int n = 0; n < 3; n++) {
+		timeStamp++;
+		addToLog(tempLog);
+		tempLog.co2[0] += 1;
+		tempLog.co2[1] += 1;
+		tempLog.co2[2] += 1;
+		tempLog.co2[3] += 1;
+		tempLog.hum[0] += 0.5;
+		tempLog.hum[1] += 0.5;
+		tempLog.hum[2] += 0.5;
+		tempLog.hum[3] += 0.5;
+		tempLog.temperature[0] += 1;
+		tempLog.temperature[1] += 1;
+		tempLog.temperature[2] += 1;
+		tempLog.temperature[3] += 1;
+	}
+	
+	getAllLogsScript(buf, 100);
+
+
+}
+
 
 // creates UDP task for receiving sensordata
 // parses the messages
@@ -55,6 +96,7 @@ void sensorTask(void *pvParameters) {
 
 	xTaskCreate(udpServerTask, "udpServerTask", configMINIMAL_STACK_SIZE * 5, (void *)&udpTaskParams, 5, NULL);
 	vTaskDelay(100);
+//	testLog();
 
 	while (1) {
 		if (xQueueReceive(udpMssgBox, &udpMssg, 0)) { // wait for messages from sensors to arrive
@@ -62,9 +104,9 @@ void sensorTask(void *pvParameters) {
 				ESP_LOGI(TAG, "%s", udpMssg.mssg);
 				if (sscanf(udpMssg.mssg, "S%d,%f,%f,%f,%d", &sensorNr, &sensorMssg.co2, &sensorMssg.temperature, &sensorMssg.hum, &sensorMssg.rssi) == 5) {
 					if ((sensorNr > 0) && (sensorNr < 4)) { // add values to temporary log
-						tempLog.co2[sensorNr] = sensorMssg.co2;
-						tempLog.temperature[sensorNr] = sensorMssg.temperature;
-						tempLog.hum[sensorNr] = sensorMssg.hum;
+						tempLog.co2[sensorNr-1] = sensorMssg.co2;
+						tempLog.temperature[sensorNr-1] = sensorMssg.temperature;
+						tempLog.hum[sensorNr-1] = sensorMssg.hum;
 					} else
 						ESP_LOGE(TAG, "Wrong sensornr (%d)", sensorNr);
 				} else
@@ -74,15 +116,17 @@ void sensorTask(void *pvParameters) {
 			} else
 				ESP_LOGE(TAG, "Error reading sensor");
 		}
-		lastVal.timeStamp = timeStamp;
+
 		time(&now);
 		localtime_r(&now, &timeinfo);
+		if ( lastminute == -1) {
+			lastminute = timeinfo.tm_min; 
+		}
 		if (lastminute != timeinfo.tm_min) {
-			tempLog.timeStamp = timeStamp;
+			lastminute = timeinfo.tm_min; // every minute
 			addToLog(tempLog); // add to cyclic log buffer
 			lastVal = tempLog;
-
-			lastminute = timeinfo.tm_min; // every minute
+			memset(&tempLog, 0, sizeof(tempLog));
 		}
 		vTaskDelay(10);
 	}
@@ -92,19 +136,31 @@ void sensorTask(void *pvParameters) {
 
 int printLog(log_t *logToPrint, char *pBuffer, int idx) {
 	int len;
-	len = sprintf(pBuffer, "%lu,", logToPrint->timeStamp);
+	len = sprintf(pBuffer, "%ld,", logToPrint->timeStamp);
 	len += sprintf(pBuffer + len, "%3.0f,", logToPrint->co2[idx]);
 	len += sprintf(pBuffer + len, "%3.2f,", logToPrint->temperature[idx]);
 	len += sprintf(pBuffer + len, "%3.2f\n", logToPrint->hum[idx]);
 	return len;
 }
 
+int printLog(log_t *logToPrint, char *pBuffer) {
+	int len = 0;
+	for (int idx = 0; idx < 4; idx++) {
+		len += sprintf(pBuffer + len, "S%d,", idx+1);
+		len += sprintf(pBuffer + len, "%ld,", logToPrint->timeStamp);
+		len += sprintf(pBuffer + len, "%3.0f,", logToPrint->co2[idx]);
+		len += sprintf(pBuffer + len, "%3.2f,", logToPrint->temperature[idx]);
+		len += sprintf(pBuffer + len, "%3.2f ", logToPrint->hum[idx]);
+	}
+	len += sprintf(pBuffer + len, "\n");
+	return len;
+}
 int getRTMeasValuesScript(int sensorNr, char *pBuffer, int count) {
 	int len = 0;
 	switch (scriptState) {
 	case 0:
 		scriptState++;
-		len += printLog(&lastVal, pBuffer, sensorNr);
+		len += printLog(&lastVal, pBuffer);
 		return len;
 		break;
 	default:
@@ -116,7 +172,6 @@ int getRTMeasValuesScript(int sensorNr, char *pBuffer, int count) {
 // prints last measurement values from sensor 1 .. 4
 
 int getRTMeasValuesScript1(char *pBuffer, int count) { return getRTMeasValuesScript(1, pBuffer, count); }
-
 int getRTMeasValuesScript2(char *pBuffer, int count) { return getRTMeasValuesScript(2, pBuffer, count); }
 int getRTMeasValuesScript3(char *pBuffer, int count) { return getRTMeasValuesScript(3, pBuffer, count); }
 int getRTMeasValuesScript4(char *pBuffer, int count) { return getRTMeasValuesScript(4, pBuffer, count); }

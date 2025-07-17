@@ -64,7 +64,7 @@ int getAllLogsScript(char *pBuffer, int count) {
 				left = count - len;
 				logsToSend--;
 
-			} while (logsToSend && (left > 40));
+			} while (logsToSend && (left > sizeof (log_t)));
 		}
 	}
 	return len;
