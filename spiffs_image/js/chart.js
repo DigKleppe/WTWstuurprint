@@ -143,6 +143,10 @@ function initChart2() {
 			}
 		}
 	}
+	if (SIMULATE) {
+		simplot();
+	}
+
 	//SIMULATE = true;	
 	startTimer();
 }
@@ -170,7 +174,7 @@ function plot(channel, co2, t, rh, timeStamp) {
 	value = parseFloat(co2);
 	CO2data.setValue(CO2data.getNumberOfRows() - 1, channel, value);
 	value = parseFloat(t);
-	tempAndRHdata.setValue(tempAndRHdata.getNumberOfRows() - 1, channel, value);
+	tempAndRHdata.setValue(tempAndRHdata.getNumberOfRows() - 1, channel * 2 - 1, value);
 	value = parseFloat(rh);
 	tempAndRHdata.setValue(tempAndRHdata.getNumberOfRows() - 1, channel * 2, value);
 
@@ -211,9 +215,9 @@ function plotLog(str) {
 }
 
 function simplot() {
-	var str = "S1,1,460,21.1,65 S2,1,560,21.1,65 S3,1,660,21.1,65 S4,1,460,21.1,65\n";
-	str += "S1,2,470,21.5,65 S2,1,570,21.1,65 S3,1,670,21.1,65 S4,1,460,21.1,69\n";
-	str += "S1,3,480,21.7,65 S2,1,590,21.1,65 S3,1,680,21.1,65 S4,1,460,21.1,165\n";
+	var str = "S1,1,460,21.1,20 S2,1,560,25.1,65 S3,1,660,8, S4,1,460,21.1,99\n";
+	str += "S1,2,470,21.5,21 S2,1,570,26.1,65 S3,1,670,9 S4,1,460,21.1,99\n";
+	str += "S1,3,480,21.7,22 S2,1,590,25.1,65 S3,1,680,10,65 S4,1,460,21.1,110\n";
 	plotLog(str);
 
 }
@@ -223,7 +227,7 @@ function timer() {
 	var str;
 
 	if (SIMULATE) {
-		simplot();
+		//	simplot();
 	}
 	else {
 		if (firstRequest) {
@@ -233,31 +237,20 @@ function timer() {
 			plotLog(arr);
 			firstRequest = false;
 		}
-		for (var n = 1; n < NRSensors; n++) {
-			if (chartSeries[n] != -1) {
-				str = getItem("getRTMeasValues" + chartSeries[n].toString()); // request data from enabled sensors
-				if (str) {
-					arr = str.split(",");
-					if (arr.length >= 3) {
-						if (arr[0] > 0) {
-							if (arr[0] != lastTimeStamp) {
-								lastTimeStamp = arr[0];
-								for (var m = 1; m < 4; m++) { // time not used for now 
-									var value = parseFloat(arr[m]); // from string to float
-									//								document.getElementById(displayNames[m]).innerHTML = arr[m] + unit[m];
-								}
-								var sampleTime = Date.now();
-								plot(chartSeries[n], arr[1], arr[2], arr[3], sampleTime);
-								tRHchart.draw(tempAndRHdata, tempAndRHoptions);
-								CO2chart.draw(CO2data, CO2Options);
-							}
-						}
+		str = getItem("getRTMeasValues"); // request data from enabled sensors
+		if (str) {
+			arr = str.split(",");
+			if (arr.length >= 3) {
+				if (arr[1] > 0) {
+					if (arr[1] != lastTimeStamp) {
+						lastTimeStamp = arr[1];
+						plotLog(str);
 					}
 				}
-				else
-					console.log("getRTMeasValues failed");
 			}
 		}
+		else
+			console.log("getRTMeasValues failed");
 	}
 }
 

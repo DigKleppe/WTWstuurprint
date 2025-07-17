@@ -126,6 +126,7 @@ void sensorTask(void *pvParameters) {
 			lastminute = timeinfo.tm_min; // every minute
 			addToLog(tempLog); // add to cyclic log buffer
 			lastVal = tempLog;
+			lastVal.timeStamp = timeStamp;
 			memset(&tempLog, 0, sizeof(tempLog));
 		}
 		vTaskDelay(10);
@@ -155,7 +156,7 @@ int printLog(log_t *logToPrint, char *pBuffer) {
 	len += sprintf(pBuffer + len, "\n");
 	return len;
 }
-int getRTMeasValuesScript(int sensorNr, char *pBuffer, int count) {
+int getRTMeasValuesScript( char *pBuffer, int count) {
 	int len = 0;
 	switch (scriptState) {
 	case 0:
@@ -171,10 +172,10 @@ int getRTMeasValuesScript(int sensorNr, char *pBuffer, int count) {
 
 // prints last measurement values from sensor 1 .. 4
 
-int getRTMeasValuesScript1(char *pBuffer, int count) { return getRTMeasValuesScript(1, pBuffer, count); }
-int getRTMeasValuesScript2(char *pBuffer, int count) { return getRTMeasValuesScript(2, pBuffer, count); }
-int getRTMeasValuesScript3(char *pBuffer, int count) { return getRTMeasValuesScript(3, pBuffer, count); }
-int getRTMeasValuesScript4(char *pBuffer, int count) { return getRTMeasValuesScript(4, pBuffer, count); }
+// int getRTMeasValuesScript1(char *pBuffer, int count) { return getRTMeasValuesScript(1, pBuffer, count); }
+// int getRTMeasValuesScript2(char *pBuffer, int count) { return getRTMeasValuesScript(2, pBuffer, count); }
+// int getRTMeasValuesScript3(char *pBuffer, int count) { return getRTMeasValuesScript(3, pBuffer, count); }
+// int getRTMeasValuesScript4(char *pBuffer, int count) { return getRTMeasValuesScript(4, pBuffer, count); }
 
 int getInfoValuesScript(char *pBuffer, int count) {
 	int len = 0;
