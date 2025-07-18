@@ -73,15 +73,14 @@ void testLog(void) {
 		tempLog.temperature[2] += 1;
 		tempLog.temperature[3] += 1;
 	}
-	
+
 	getAllLogsScript(buf, 100);
-
-
 }
-
 
 // creates UDP task for receiving sensordata
 // parses the messages
+
+char buffer[200];
 
 void sensorTask(void *pvParameters) {
 	udpMssg_t udpMssg;
@@ -92,11 +91,25 @@ void sensorTask(void *pvParameters) {
 	time_t now = 0;
 	struct tm timeinfo;
 
+	// if (initLogBuffer() == NULL) {
+	// 	ESP_LOGE(TAG, "Init logBuffer failed");
+	// 	vTaskDelete(NULL);
+	// }
+	//do {
+		// for (int p = 0; p < 120* 60; p++) {
+		// 	timeStamp++;
+		// 	tempLog.timeStamp = timeStamp;
+		// 	addToLog(tempLog);
+		// }
+	// 	getAllLogsScript(buffer, sizeof(buffer));
+	// 	vTaskDelay(10);
+	// } while (1);
+
 	const udpTaskParams_t udpTaskParams = {.port = UDPSENSORPORT, .maxLen = MAXLEN};
 
 	xTaskCreate(udpServerTask, "udpServerTask", configMINIMAL_STACK_SIZE * 5, (void *)&udpTaskParams, 5, NULL);
 	vTaskDelay(100);
-//	testLog();
+	//	testLog();
 
 	while (1) {
 		if (xQueueReceive(udpMssgBox, &udpMssg, 0)) { // wait for messages from sensors to arrive
@@ -104,9 +117,9 @@ void sensorTask(void *pvParameters) {
 				ESP_LOGI(TAG, "%s", udpMssg.mssg);
 				if (sscanf(udpMssg.mssg, "S%d,%f,%f,%f,%d", &sensorNr, &sensorMssg.co2, &sensorMssg.temperature, &sensorMssg.hum, &sensorMssg.rssi) == 5) {
 					if ((sensorNr > 0) && (sensorNr < 4)) { // add values to temporary log
-						tempLog.co2[sensorNr-1] = sensorMssg.co2;
-						tempLog.temperature[sensorNr-1] = sensorMssg.temperature;
-						tempLog.hum[sensorNr-1] = sensorMssg.hum;
+						tempLog.co2[sensorNr - 1] = sensorMssg.co2;
+						tempLog.temperature[sensorNr - 1] = sensorMssg.temperature;
+						tempLog.hum[sensorNr - 1] = sensorMssg.hum;
 					} else
 						ESP_LOGE(TAG, "Wrong sensornr (%d)", sensorNr);
 				} else
@@ -119,12 +132,12 @@ void sensorTask(void *pvParameters) {
 
 		time(&now);
 		localtime_r(&now, &timeinfo);
-		if ( lastminute == -1) {
-			lastminute = timeinfo.tm_min; 
+		if (lastminute == -1) {
+			lastminute = timeinfo.tm_min;
 		}
 		if (lastminute != timeinfo.tm_min) {
 			lastminute = timeinfo.tm_min; // every minute
-			addToLog(tempLog); // add to cyclic log buffer
+			addToLog(tempLog);			  // add to cyclic log buffer
 			lastVal = tempLog;
 			lastVal.timeStamp = timeStamp;
 			memset(&tempLog, 0, sizeof(tempLog));
@@ -147,7 +160,7 @@ int printLog(log_t *logToPrint, char *pBuffer, int idx) {
 int printLog(log_t *logToPrint, char *pBuffer) {
 	int len = 0;
 	for (int idx = 0; idx < 4; idx++) {
-		len += sprintf(pBuffer + len, "S%d,", idx+1);
+		len += sprintf(pBuffer + len, "S%d,", idx + 1);
 		len += sprintf(pBuffer + len, "%ld,", logToPrint->timeStamp);
 		len += sprintf(pBuffer + len, "%3.0f,", logToPrint->co2[idx]);
 		len += sprintf(pBuffer + len, "%3.2f,", logToPrint->temperature[idx]);
@@ -156,7 +169,7 @@ int printLog(log_t *logToPrint, char *pBuffer) {
 	len += sprintf(pBuffer + len, "\n");
 	return len;
 }
-int getRTMeasValuesScript( char *pBuffer, int count) {
+int getRTMeasValuesScript(char *pBuffer, int count) {
 	int len = 0;
 	switch (scriptState) {
 	case 0:

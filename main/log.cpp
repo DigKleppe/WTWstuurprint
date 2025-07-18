@@ -8,13 +8,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <esp_heap_caps.h>
 
 int printLog(log_t *logToPrint, char *pBuffer);
 extern int scriptState;
 
 int logRxIdx;
 int logTxIdx;
+
 static log_t measLog[ MAXLOGVALUES];
+
+// log_t * measLog;
+
+// log_t * initLogBuffer ( void) {
+// 	void *p = heap_caps_malloc( MAXLOGVALUES * sizeof ( log_t),  MALLOC_CAP_SPIRAM);
+// 	measLog = (log_t *)p;
+// 	return measLog;
+// }
 
 void addToLog(log_t logValue) {
 	measLog[logTxIdx] = logValue;

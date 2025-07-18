@@ -14,6 +14,7 @@
 
 #define MAXLOGVALUES (24 * 60)
 
+
 typedef struct {
 	unsigned long timeStamp;
 	float co2[4];
@@ -21,7 +22,7 @@ typedef struct {
 	float hum[4];
 } log_t;
 
-
+log_t * initLogBuffer ( void); // in psRAM
 
 extern int logRxIdx;
 extern int logTxIdx;

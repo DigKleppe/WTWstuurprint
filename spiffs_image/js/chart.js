@@ -19,7 +19,7 @@ var plotTimer = 6; // every 60 seconds plot averaged value
 var rows = 0;
 var chargeInfoTbl;
 
-var SECONDSPERTICK = (5 * 60);// log interval 
+var SECONDSPERTICK = (1 * 60);// log interval 
 var LOGDAYS = 1;
 var MAXPOINTS = (LOGDAYS * 24 * 60 * 60 / SECONDSPERTICK)
 
@@ -223,14 +223,16 @@ function plot(channel, co2, t, rh, timeStamp) {
 		tdata.addRow();
 		CO2data.addRow();
 		row = CO2data.getNumberOfRows();
-		if (row > MAXPOINTS == true) {
+		if (row > MAXPOINTS ) {
 			CO2data.removeRows(0, 1);
 			RHdata.removeRows(0, 1);
 			tdata.removeRows(0, 1);
+			row--;
 		}
 		var date = new Date(timeStamp);
 		var labelText = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-		CO2data.setValue(row - 1, 0, labelText);
+
+		CO2data.setValue(row - 1 , 0, labelText);
 		RHdata.setValue(row - 1, 0, labelText);
 		tdata.setValue(row - 1, 0, labelText);
 	}
