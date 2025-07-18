@@ -13,7 +13,7 @@
 			'packages': ['corechart']
 		});
 		google.charts.setOnLoadCallback(initChart);
-		google.load("visualization", "1", {packages: ["corechart"]});
+	//	google.load("visualization", "1", {packages: ["corechart"]});
 	</script>
 </head>
 
@@ -32,9 +32,10 @@
     </table>
 
 	<div id="CO2chart" style="width: 100%; height: 800px"></div>
-	<div id="tRHchart" style="width: 100%; height: 800px"></div>
-
-    <input type="checkbox" id="S1cb" class="save-cb-state" 
+	<div id="tchart" style="width: 100%; height: 800px"></div>
+  <div id="RHchart" style="width: 100%; height: 800px"></div>
+  
+  <input type="checkbox" id="S1cb" class="save-cb-state" 
       value="yes">
     <label for="S1cb">Sensor 1</label><br>
     <input type="checkbox" id="S2cb" class="save-cb-state" 

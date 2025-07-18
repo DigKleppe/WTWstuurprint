@@ -1,5 +1,6 @@
 var CO2data;
-var tempAndRHdata;
+var tdata;
+var RHdata;
 
 var chartRdy = false;
 var tick = 0;
@@ -47,38 +48,39 @@ var CO2Options = {
 	chartArea: { 'width': '90%', 'height': '80%' },
 };
 
-var tempAndRHoptions = {
-	title: '',
-	curveType: 'function',
-	legend: { position: 'top' },
+// var tempAndRHoptions = {
+// 	title: '',
+// 	curveType: 'function',
+// 	legend: { position: 'top' },
 
-	heigth: 200,
-	crosshair: { trigger: 'both' },	// Display crosshairs on focus and selection.
-	explorer: {
-		actions: ['dragToZoom', 'rightClickToReset'],
-		//actions: ['dragToPan', 'rightClickToReset'],
-		axis: 'horizontal',
-		keepInBounds: true,
-		maxZoomIn: 100.0
-	},
-	chartArea: { 'width': '90%', 'height': '80%' },
+// 	heigth: 200,
+// 	crosshair: { trigger: 'both' },	// Display crosshairs on focus and selection.
+// 	explorer: {
+// 		actions: ['dragToZoom', 'rightClickToReset'],
+// 		//actions: ['dragToPan', 'rightClickToReset'],
+// 		axis: 'horizontal',
+// 		keepInBounds: true,
+// 		maxZoomIn: 100.0
+// 	},
+// 	chartArea: { 'width': '90%', 'height': '80%' },
 
-	vAxes: {
-		0: { logScale: false },
-		1: { logScale: false }
-	},
-	series: {
-		0: { targetAxisIndex: 0 },// temperature
-		1: { targetAxisIndex: 1 },// RH
-	},
-};
+// 	vAxes: {
+// 		0: { logScale: false },
+// 		1: { logScale: false }
+// 	},
+// 	series: {
+// 		0: { targetAxisIndex: 0 },// temperature
+// 		1: { targetAxisIndex: 1 },// RH
+// 	},
+// };
 
 function clear() {
-	tempAndRHdata.removeRows(0, tempAndRHdata.getNumberOfRows());
 	CO2data.removeRows(0, CO2data.getNumberOfRows());
-	tRHchart.draw(tempAndRHdata, tempAndRHoptions);
+	tdata.removeRows(0, tdata.getNumberOfRows());
+	RHdata.removeRows(0, RHdata.getNumberOfRows());
 	CO2chart.draw(CO2data, CO2Options);
-	tick = 0;
+	RHchart.draw(RHdata, CO2Options);
+	tchart.draw(tdata, CO2Options);
 }
 
 //var formatter_time= new google.visualization.DateFormat({formatType: 'long'});
@@ -127,24 +129,39 @@ function initChart2() {
 	CO2chart = new google.visualization.LineChart(document.getElementById('CO2chart'));
 	CO2data = new google.visualization.DataTable();
 	CO2data.addColumn('string', 'Time');
-	tRHchart = new google.visualization.LineChart(document.getElementById('tRHchart'));
-	tempAndRHdata = new google.visualization.DataTable();
-	tempAndRHdata.addColumn('string', 'Time');
+
+	tchart = new google.visualization.LineChart(document.getElementById('tchart'));
+	tdata = new google.visualization.DataTable();
+	tdata.addColumn('string', 'Time');
+
+	RHchart = new google.visualization.LineChart(document.getElementById('RHchart'));
+	RHdata = new google.visualization.DataTable();
+	RHdata.addColumn('string', 'Time');
+
 
 	for (var m = 1; m < NRSensors; m++) {
 		var cb = document.getElementById(cbIDs[m]);
 		if (cb) {
 			if (cb.checked) {
 				CO2data.addColumn('number', displayNames[m] + ":CO2");
-				tempAndRHdata.addColumn('number', displayNames[m] + ':t');
-				tempAndRHdata.addColumn('number', displayNames[m] + ':RH');
+				tdata.addColumn('number', displayNames[m] + ':t');
+				RHdata.addColumn('number', displayNames[m] + ':RH');
 				chartSeries[m] = activeSeries;
 				activeSeries++;
 			}
 		}
 	}
+	if (activeSeries == 1) {  // none cb in
+		CO2data.addColumn('number', displayNames[1] + ":CO2");
+		tdata.addColumn('number', displayNames[1] + ':t');
+		RHdata.addColumn('number', displayNames[1] + ':RH');
+		chartSeries[1] = 1;
+		cb = document.getElementById(cbIDs[1]);
+		cb.checked = true;
+		}
 	if (SIMULATE) {
 		simplot();
+	//	plotTest();
 	}
 
 	//SIMULATE = true;	
@@ -156,28 +173,79 @@ function startTimer() {
 	setInterval(function () { timer() }, 1000);
 }
 
+function plotTest() {
+	var p = 10;
+	for (var n = 0; n < 3; n++) {
+		plot( 1,  50, p+20, p+40, n);
+		plot( 1, 50, p+20, p+40, n );
+		plot( 1, 50, p+20, p+40,n) ;
+		p+= 5;
+		plot( 2,  50, p+20, p+40, n);
+		plot( 2, 50, p+20, p+40, n );
+		plot( 2, 50, p+20, p+40,n) ;
+	}	
+
+	// for (var n = 0; n < 3; n++) {
+	// 	RHdata.addRow();
+	// 	tdata.addRow();
+	// 	CO2data.addRow();
+	// 	var row = CO2data.getNumberOfRows() - 1;
+	// 	// if (CO2data.getNumberOfRows() > MAXPOINTS == true) {
+	// 	// 	CO2data.removeRows(0, CO2data.getNumberOfRows() - MAXPOINTS);
+	// 	// 	tempAndRHdata.removeRows(0, CO2data.getNumberOfRows() - MAXPOINTS);
+	// 	// }
+	// 	// //	var date = new Date(timeStamp);
+	// 	//	var labelText = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+	// 	var labelText = n + 1 .toString();
+	// 	CO2data.setValue(row, 0, labelText);
+	// 	RHdata.setValue(row, 1, 0, labelText);
+	// 	tdata.setValue(row, 1, 0, labelText);
+
+	// 	var value = n + 1
+	// 	CO2data.setValue(row, 1, value);
+	// 	CO2data.setValue(row, 2, value + 0.2);
+	// 	value = n + 1;
+	// 	RHdata.setValue(row, 1, value + 0.1);
+	// 	tempAndRHdata.setValue(row, 2, value + 30);
+	// 	value = n + 2;
+	// 	tempAndRHdata.setValue(row, 3, value + 0.1);
+	// 	//	tempAndRHdata.setValue(row, 4, value +35);
+	// }
+	RHchart.draw(RHdata, CO2Options);
+	tchart.draw(tdata, CO2Options);
+	CO2chart.draw(CO2data, CO2Options);
+}
 
 function plot(channel, co2, t, rh, timeStamp) {
+	var row;
 	if (channel == 1) {
-		tempAndRHdata.addRow();
+		RHdata.addRow();
+		tdata.addRow();
 		CO2data.addRow();
-		if (CO2data.getNumberOfRows() > MAXPOINTS == true) {
-			CO2data.removeRows(0, CO2data.getNumberOfRows() - MAXPOINTS);
-			tempAndRHdata.removeRows(0, CO2data.getNumberOfRows() - MAXPOINTS);
+		row = CO2data.getNumberOfRows();
+		if (row > MAXPOINTS == true) {
+			CO2data.removeRows(0, 1);
+			RHdata.removeRows(0, 1);
+			tdata.removeRows(0, 1);
 		}
-
 		var date = new Date(timeStamp);
 		var labelText = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-		CO2data.setValue(CO2data.getNumberOfRows() - 1, 0, labelText);
-		tempAndRHdata.setValue(tempAndRHdata.getNumberOfRows() - 1, 0, labelText);
+		CO2data.setValue(row - 1, 0, labelText);
+		RHdata.setValue(row - 1, 0, labelText);
+		tdata.setValue(row - 1, 0, labelText);
 	}
-	value = parseFloat(co2);
-	CO2data.setValue(CO2data.getNumberOfRows() - 1, channel, value);
-	value = parseFloat(t);
-	tempAndRHdata.setValue(tempAndRHdata.getNumberOfRows() - 1, channel * 2 - 1, value);
-	value = parseFloat(rh);
-	tempAndRHdata.setValue(tempAndRHdata.getNumberOfRows() - 1, channel * 2, value);
+	var value = parseFloat(co2);
+	row = CO2data.getNumberOfRows() - 1;
 
+	//	console.log("row: " + row + " channel: " + channel + " value: " + value);
+	CO2data.setValue(row, channel, value);
+	value = parseFloat(t);
+	console.log("row: " + row + " channel: " + channel + " value: " + value);
+	tdata.setValue(row, channel, value);
+	value = parseFloat(rh);
+	console.log("row: " + row + " channel: " + channel + " value: " + value);
+	RHdata.setValue(row, channel, value);
+	console.log(" ");
 }
 
 // S1, ts, co21, temp1, hum1, S2, ts, co22, temp2, hum2 S3 ts, co23, temp3, hum3 S4 ts, co24, temp4, hum4\n     
@@ -209,15 +277,16 @@ function plotLog(str) {
 				}
 			}
 		}
-		tRHchart.draw(tempAndRHdata, tempAndRHoptions);
 		CO2chart.draw(CO2data, CO2Options);
+		RHchart.draw(RHdata, CO2Options);
+		tchart.draw(tdata, CO2Options);
 	}
 }
 
 function simplot() {
-	var str = "S1,1,460,21.1,20 S2,1,560,25.1,65 S3,1,660,8, S4,1,460,21.1,99\n";
-	str += "S1,2,470,21.5,21 S2,1,570,26.1,65 S3,1,670,9 S4,1,460,21.1,99\n";
-	str += "S1,3,480,21.7,22 S2,1,590,25.1,65 S3,1,680,10,65 S4,1,460,21.1,110\n";
+	var str = "S1,1,460,21.1,30 S2,1,560,25.1,65 S3,1,660,8,70 S4,1,460,21.1,99\n";
+	str += "S1,2,470,21.5,35 S2,1,570,26.1,65 S3,1,670,9,72 S4,1,460,21.1,99\n";
+	str += "S1,3,480,21.7,40 S2,1,590,25.1,60 S3,1,680,10,65 S4,1,460,21.1,110\n";
 	plotLog(str);
 
 }
@@ -232,8 +301,10 @@ function timer() {
 	else {
 		if (firstRequest) {
 			arr = getItem("getLogMeasValues");
-			tempAndRHdata.removeRows(0, tempAndRHdata.getNumberOfRows());
 			CO2data.removeRows(0, CO2data.getNumberOfRows());
+			RHdata.removeRows(0, RHdata.getNumberOfRows());
+			tdata.removeRows(0, tdata.getNumberOfRows());
+
 			plotLog(arr);
 			firstRequest = false;
 		}
