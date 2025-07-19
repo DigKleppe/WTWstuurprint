@@ -36,14 +36,15 @@ void addToLog(log_t logValue) {
 
 // reads all available data from log
 // issued as first request.
-
+static int blocks;
 int getAllLogsScript(char *pBuffer, int count) {
-	static time_t oldTimeStamp = 0;
+	static uint32_t oldTimeStamp = 0;
 	static int logsToSend = 0;
 	int left, len = 0;
 	int n;
 	if (scriptState == 0) { // find oldest value in cyclic logbuffer
 		logRxIdx = 0;
+		blocks = 0;
 		if (measLog[logRxIdx].timeStamp == 0)
 			return 0; // empty
 
@@ -66,6 +67,8 @@ int getAllLogsScript(char *pBuffer, int count) {
 	if (scriptState == 1) { // send complete buffer
 		if (logsToSend) {
 			len = 0;
+			blocks++;
+	
 			do {
 				len += printLog(&measLog[logRxIdx], pBuffer + len);
 				logRxIdx++;
@@ -74,7 +77,8 @@ int getAllLogsScript(char *pBuffer, int count) {
 				left = count - len;
 				logsToSend--;
 
-			} while (logsToSend && (left > sizeof (log_t)));
+			} while (logsToSend && (left > (len + 50))); 
+		//	printf(" Sending block %d, logsToSend: %d  left:%d\r\n", blocks, logsToSend,  left);
 		}
 	}
 	return len;

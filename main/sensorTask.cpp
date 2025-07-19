@@ -80,7 +80,7 @@ void testLog(void) {
 // creates UDP task for receiving sensordata
 // parses the messages
 
-char buffer[200];
+char buffer[8 * 1024];
 
 void sensorTask(void *pvParameters) {
 	udpMssg_t udpMssg;
@@ -91,17 +91,26 @@ void sensorTask(void *pvParameters) {
 	time_t now = 0;
 	struct tm timeinfo;
 
+			int len;
+
 	// if (initLogBuffer() == NULL) {
 	// 	ESP_LOGE(TAG, "Init logBuffer failed");
 	// 	vTaskDelete(NULL);
 	// }
-	//do {
-		// for (int p = 0; p < 120* 60; p++) {
-		// 	timeStamp++;
-		// 	tempLog.timeStamp = timeStamp;
-		// 	addToLog(tempLog);
-		// }
-	// 	getAllLogsScript(buffer, sizeof(buffer));
+	// do {
+	// 	for (int p = 0; p < 60; p++) {
+	// 		timeStamp += 60;
+	// 		addToLog(tempLog);
+	// 	}
+	// 	scriptState = 0;
+	// 	do {
+	// 		len = getAllLogsScript(buffer, sizeof(buffer));
+	// 		vTaskDelay(10);
+	// 	} while (len > 0);
+	// 	vTaskDelay( 200);
+	// } while (1);
+
+	// do {
 	// 	vTaskDelay(10);
 	// } while (1);
 
