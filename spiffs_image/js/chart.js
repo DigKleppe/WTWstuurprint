@@ -24,10 +24,11 @@ var LOGDAYS = 1;
 var MAXPOINTS = (LOGDAYS * 24 * 60 * 60 / SECONDSPERTICK)
 
 var dayNames = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
-var displayNames = ["", "S1", "S2", "S3", "S4"];
-var cbIDs = ["", "S1cb", "S2cb", "S3cb", "S4cb"];
+var displayNames = ["Ref", "S1", "S2", "S3", "S4"];
+var cbIDs = ["S0cb", "S1cb", "S2cb", "S3cb", "S4cb"];
 
 var chartSeries = [-1, -1, -1, -1, -1];
+var sensorStatus = [-1, -1, -1, -1, -1];
 
 var NRSensors = displayNames.length;
 var NRFields = 4; // timestamp, co2, t , rh 
@@ -47,32 +48,6 @@ var CO2Options = {
 	},
 	chartArea: { 'width': '90%', 'height': '80%' },
 };
-
-// var tempAndRHoptions = {
-// 	title: '',
-// 	curveType: 'function',
-// 	legend: { position: 'top' },
-
-// 	heigth: 200,
-// 	crosshair: { trigger: 'both' },	// Display crosshairs on focus and selection.
-// 	explorer: {
-// 		actions: ['dragToZoom', 'rightClickToReset'],
-// 		//actions: ['dragToPan', 'rightClickToReset'],
-// 		axis: 'horizontal',
-// 		keepInBounds: true,
-// 		maxZoomIn: 100.0
-// 	},
-// 	chartArea: { 'width': '90%', 'height': '80%' },
-
-// 	vAxes: {
-// 		0: { logScale: false },
-// 		1: { logScale: false }
-// 	},
-// 	series: {
-// 		0: { targetAxisIndex: 0 },// temperature
-// 		1: { targetAxisIndex: 1 },// RH
-// 	},
-// };
 
 function clear() {
 	CO2data.removeRows(0, CO2data.getNumberOfRows());
@@ -124,8 +99,19 @@ function loadCBs() {
 	initChart2();
 };
 
+function getSensorStatus () {
+	var str = getItem( 'getSensorStatus'); // S0, x, y S1.. status , mssg cntr
+	var arr = str.split("S");
+	for ( var m = 1 ; m < arr.length; m++) {
+		var arr2 = arr[m].split(","); 
+		var sensornr = arr2[0];
+		sensorStatus[sensornr] = arr2[1];
+	}
+}
+
 function initChart2() {
-	var activeSeries = 1;
+
+	var activeSeries = 0;
 	CO2chart = new google.visualization.LineChart(document.getElementById('CO2chart'));
 	CO2data = new google.visualization.DataTable();
 	CO2data.addColumn('string', 'Time');
@@ -138,23 +124,24 @@ function initChart2() {
 	RHdata = new google.visualization.DataTable();
 	RHdata.addColumn('string', 'Time');
 
+	getSensorStatus();
 
-	for (var m = 1; m < NRSensors; m++) {
+	for (var m = 0; m < NRSensors; m++) {
 		var cb = document.getElementById(cbIDs[m]);
 		if (cb) {
 			if (cb.checked) {
 				CO2data.addColumn('number', displayNames[m] + ":CO2");
 				tdata.addColumn('number', displayNames[m] + ':t');
-				RHdata.addColumn('number', displayNames[m] + ':RH');
+				RHdata.addColumn('number', displayNames[m] + ':RV');
 				chartSeries[m] = activeSeries;
 				activeSeries++;
 			}
 		}
 	}
-	if (activeSeries == 1) {  // none cb in
+	if (activeSeries == 0) {  // none cb in
 		CO2data.addColumn('number', displayNames[1] + ":CO2");
 		tdata.addColumn('number', displayNames[1] + ':t');
-		RHdata.addColumn('number', displayNames[1] + ':RH');
+		RHdata.addColumn('number', displayNames[1] + ':RV');
 		chartSeries[1] = 1;
 		cb = document.getElementById(cbIDs[1]);
 		cb.checked = true;
@@ -218,7 +205,7 @@ function plotTest() {
 
 function plot(channel, co2, t, rh, timeStamp) {
 	var row;
-	if (channel == 1) {
+	if (channel == 0) {
 		RHdata.addRow();
 		tdata.addRow();
 		CO2data.addRow();
@@ -239,6 +226,8 @@ function plot(channel, co2, t, rh, timeStamp) {
 	var value = parseFloat(co2);
 	row = CO2data.getNumberOfRows() - 1;
 
+	channel= channel+1;
+	
 	//	console.log("row: " + row + " channel: " + channel + " value: " + value);
 	CO2data.setValue(row, channel, value);
 	value = parseFloat(t);
@@ -269,12 +258,12 @@ function plotLog(str) {
 
 		for (var p = 0; p < nrPoints; p++) {
 			arr3 = arr2[p].split("S"); // S1 x x,y,z S2 .. S4
-			for (var m = 0; m < 4; m++) {
-				if (chartSeries[m + 1] != -1) {
+			for (var m = 0; m < NRSensors; m++) {
+				if (chartSeries[m] != -1) {
 					arr = arr3[m + 1].split(",");  // sensornr, ts , 
 					if (arr.length >= NRFields) {
 						sampleTime = parseFloat(arr[1]) * 1000 + timeOffset;
-						plot(chartSeries[m + 1], arr[2], arr[3], arr[4], sampleTime);
+						plot(chartSeries[m], arr[2], arr[3], arr[4], sampleTime);
 					}
 				}
 			}
@@ -286,9 +275,9 @@ function plotLog(str) {
 }
 
 function simplot() {
-	var str = "S1,1,460,21.1,30 S2,1,560,25.1,65 S3,1,660,8,70 S4,1,460,21.1,99\n";
-	str += "S1,2,470,21.5,35 S2,1,570,26.1,65 S3,1,670,9,72 S4,1,460,21.1,99\n";
-	str += "S1,3,480,21.7,40 S2,1,590,25.1,60 S3,1,680,10,65 S4,1,460,21.1,110\n";
+	var str = "S0,1,460,21.1,30  S1,1,460,21.1,30 S2,1,560,25.1,65 S3,1,660,8,70 S4,1,460,21.1,99\n";
+	str += "S0,1,460,21.9,32 S1,2,470,21.5,35 S2,1,570,26.1,65 S3,1,670,9,72 S4,1,460,21.1,99\n";
+	str += "S0,1,460,29.1,70 S1,3,480,21.7,40 S2,1,590,25.1,60 S3,1,680,10,65 S4,1,460,21.1,110\n";
 	plotLog(str);
 
 }

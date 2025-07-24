@@ -176,8 +176,8 @@ int printLog(log_t *logToPrint, char *pBuffer, int idx) {
 
 int printLog(log_t *logToPrint, char *pBuffer) {
 	int len = 0;
-	for (int idx = 0; idx < 4; idx++) {
-		len += sprintf(pBuffer + len, "S%d,", idx + 1);
+	for (int idx = 0; idx < NR_SENSORS; idx++) {
+		len += sprintf(pBuffer + len, "S%d,", idx);
 		len += sprintf(pBuffer + len, "%ld,", logToPrint->timeStamp);
 		len += sprintf(pBuffer + len, "%3.0f,", logToPrint->co2[idx]);
 		len += sprintf(pBuffer + len, "%3.2f,", logToPrint->temperature[idx]);
@@ -206,9 +206,9 @@ int getSensorStatusScript(char *pBuffer, int count) {
 	case 0:
 		scriptState++;
 		for (int idx = 0; idx < NR_SENSORS; idx++) {
-			len += sprintf(pBuffer + len, "S%d,", idx + 1);
+			len += sprintf(pBuffer + len, "S%d,", idx );
 			len += sprintf(pBuffer + len, "%d,", (int)sensorInfo[idx].status);
-			len += sprintf(pBuffer + len, "%u\n", (unsigned int)sensorInfo[idx].messageCntr);
+			len += sprintf(pBuffer + len, "%u", (unsigned int)sensorInfo[idx].messageCntr);
 		}
 		return len;
 	default:
