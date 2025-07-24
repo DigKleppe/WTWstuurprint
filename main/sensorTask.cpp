@@ -32,6 +32,8 @@ const char *getFirmWareVersion();
 extern int scriptState;
 log_t lastVal;
 
+sensorInfo_t sensorInfo[NR_SENSORS];
+
 typedef struct {
 	float co2;
 	float temperature;
@@ -73,7 +75,6 @@ void testLog(void) {
 		tempLog.temperature[2] += 1;
 		tempLog.temperature[3] += 1;
 	}
-
 	getAllLogsScript(buf, 100);
 }
 
@@ -90,12 +91,11 @@ void sensorTask(void *pvParameters) {
 	int lastminute = -1;
 	time_t now = 0;
 	struct tm timeinfo;
-
 	// if (initLogBuffer() == NULL) {
 	// 	ESP_LOGE(TAG, "Init logBuffer failed");
 	// 	vTaskDelete(NULL);
 	// }
-	
+
 	// for (int p = 0; p < 24* 60; p++) {
 	// 	timeStamp += 60;
 	// 	addToLog(tempLog);
@@ -109,7 +109,6 @@ void sensorTask(void *pvParameters) {
 	// 	vTaskDelay( 200);
 	// } while (1);
 
-
 	const udpTaskParams_t udpTaskParams = {.port = UDPSENSORPORT, .maxLen = MAXLEN};
 
 	xTaskCreate(udpServerTask, "udpServerTask", configMINIMAL_STACK_SIZE * 5, (void *)&udpTaskParams, 5, NULL);
@@ -117,14 +116,19 @@ void sensorTask(void *pvParameters) {
 	//	testLog();
 
 	while (1) {
-		if (xQueueReceive(udpMssgBox, &udpMssg, 0)) { // wait for messages from sensors to arrive
+		if (xQueueReceive(udpMssgBox, &udpMssg, 0)) {
 			if (udpMssg.mssg) {
 				ESP_LOGI(TAG, "%s", udpMssg.mssg);
 				if (sscanf(udpMssg.mssg, "S%d,%f,%f,%f,%d", &sensorNr, &sensorMssg.co2, &sensorMssg.temperature, &sensorMssg.hum, &sensorMssg.rssi) == 5) {
-					if ((sensorNr > 0) && (sensorNr < 4)) { // add values to temporary log
-						tempLog.co2[sensorNr - 1] = sensorMssg.co2;
-						tempLog.temperature[sensorNr - 1] = sensorMssg.temperature;
-						tempLog.hum[sensorNr - 1] = sensorMssg.hum;
+					if ((sensorNr >= 0) && (sensorNr < NR_SENSORS)) { // add values to temporary log   sensor0 is reference
+						sensorInfo[sensorNr].messageCntr++;
+						sensorInfo[sensorNr].status = SENSORSTATUS_OK;
+						sensorInfo[sensorNr].timeoutTmr = 0;
+						tempLog.co2[sensorNr] = sensorMssg.co2;
+						tempLog.temperature[sensorNr] = sensorMssg.temperature;
+						tempLog.hum[sensorNr] = sensorMssg.hum;
+						if (tempLog.co2[sensorNr] >= _ERRORVALUE)
+							sensorInfo[sensorNr].status = SENSORSTATUS_ERROR;
 					} else
 						ESP_LOGE(TAG, "Wrong sensornr (%d)", sensorNr);
 				} else
@@ -134,7 +138,6 @@ void sensorTask(void *pvParameters) {
 			} else
 				ESP_LOGE(TAG, "Error reading sensor");
 		}
-
 		time(&now);
 		localtime_r(&now, &timeinfo);
 		if (lastminute == -1) {
@@ -147,7 +150,16 @@ void sensorTask(void *pvParameters) {
 			lastVal.timeStamp = timeStamp;
 			memset(&tempLog, 0, sizeof(tempLog));
 		}
-		vTaskDelay(10);
+		for (int n = 1; n < NR_SENSORS; n++) {					  // timeouts for regular sensors 1 .. 4, sensor 0 is temporary reference and calibrator
+			if (sensorInfo[n].status > SENSORSTATUS_NOTPRESENT) { // once sensor is detected
+				sensorInfo[n].timeoutTmr++;
+				if (sensorInfo[n].timeoutTmr >= (SENSOR_TIMEOUT * 100)) {
+					sensorInfo[n].status = SENSORSTATUS_NOCOMM;
+					sensorInfo[n].timeoutTmr--;
+				}
+			}
+		}
+		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 }
 
@@ -188,30 +200,50 @@ int getRTMeasValuesScript(char *pBuffer, int count) {
 	return 0;
 }
 
-// prints last measurement values from sensor 1 .. 4
-
-// int getRTMeasValuesScript1(char *pBuffer, int count) { return getRTMeasValuesScript(1, pBuffer, count); }
-// int getRTMeasValuesScript2(char *pBuffer, int count) { return getRTMeasValuesScript(2, pBuffer, count); }
-// int getRTMeasValuesScript3(char *pBuffer, int count) { return getRTMeasValuesScript(3, pBuffer, count); }
-// int getRTMeasValuesScript4(char *pBuffer, int count) { return getRTMeasValuesScript(4, pBuffer, count); }
-
-int getInfoValuesScript(char *pBuffer, int count) {
+int getSensorStatusScript(char *pBuffer, int count) {
 	int len = 0;
 	switch (scriptState) {
 	case 0:
 		scriptState++;
+		for (int idx = 0; idx < NR_SENSORS; idx++) {
+			len += sprintf(pBuffer + len, "S%d,", idx + 1);
+			len += sprintf(pBuffer + len, "%d,", (int)sensorInfo[idx].status);
+			len += sprintf(pBuffer + len, "%u\n", (unsigned int)sensorInfo[idx].messageCntr);
+		}
+		return len;
+	default:
+		break;
+	}
+	return 0;
+}
+
+int getInfoValuesScript(char *pBuffer, int count) {
+	int len = 0;
+	bool sensorFound = false;
+	switch (scriptState) {
+	case 0:
+		scriptState++;
 		len = sprintf(pBuffer, "%s\n", "Naam,Waarde");
-		// len += sprintf(pBuffer + len, "%s,%s\n", "Sensornaam", userSettings.moduleName);
-		// len += sprintf(pBuffer + len, "%s,%3.0f\n", "CO2", lastVal.co2);
-		// len += sprintf(pBuffer + len, "%s,%3.2f\n", "temperatuur", lastVal.temperature);
-		// len += sprintf(pBuffer + len, "%s,%3.0f\n", "Vochtigheid", lastVal.hum);
+		for (int idx = 0; idx < NR_SENSORS; idx++) {
+			if (sensorInfo[idx].status != SENSORSTATUS_NOTPRESENT) {
+				sensorFound = true;
+				len += sprintf(pBuffer + len, "Sensor, %d\n", idx + 1);
+				len += sprintf(pBuffer + len, "CO2,%3.0f\n", lastVal.co2[idx]);
+				len += sprintf(pBuffer + len, "temperatuur,%3.2f\n", lastVal.temperature[idx]);
+				len += sprintf(pBuffer + len, "RV,%3.0f\n", lastVal.hum[idx]);
+				len += sprintf(pBuffer + len, "status, %d,", (int)sensorInfo[idx].status);
+				len += sprintf(pBuffer + len, "berichten, %u\n", (unsigned int) sensorInfo[idx].messageCntr);
+			}
+		}
+		if (!sensorFound)
+			len += sprintf(pBuffer + len, "Fout, Geen Sensoren gevonden\n");
 		return len;
 	case 1:
 		scriptState++;
 		//		len = sprintf(pBuffer + len, "%s,%1.2f\n", "temperatuur offset", userSettings.temperatureOffset);
-		len += sprintf(pBuffer + len, "%s,%d\n", "RSSI", getRssi());
 		len += sprintf(pBuffer + len, "%s,%s\n", "firmwareversie", getFirmWareVersion());
 		len += sprintf(pBuffer + len, "%s,%s\n", "SPIFFS versie", wifiSettings.SPIFFSversion);
+		len += sprintf(pBuffer + len, "%s,%d\n", "RSSI", getRssi());
 		return len;
 		break;
 	default:

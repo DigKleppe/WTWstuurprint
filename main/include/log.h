@@ -17,9 +17,9 @@
 
 typedef struct {
 	unsigned long timeStamp;
-	float co2[4];
-	float temperature[4];
-	float hum[4];
+	float co2[5];
+	float temperature[5];
+	float hum[5];
 } log_t;
 
 log_t * initLogBuffer ( void); // in psRAM
