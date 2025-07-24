@@ -30,6 +30,7 @@ extern unsigned long timeStamp;
 
 int getAllLogsScript(char *pBuffer, int count);
 int getNewLogsScript(char *pBuffer, int count);
+int clearLogScript(char *pBuffer, int count);
 void addToLog( log_t logValue);
 void testLog( void) ;
 

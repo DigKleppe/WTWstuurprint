@@ -91,17 +91,16 @@ void sensorTask(void *pvParameters) {
 	time_t now = 0;
 	struct tm timeinfo;
 
-			int len;
-
 	// if (initLogBuffer() == NULL) {
 	// 	ESP_LOGE(TAG, "Init logBuffer failed");
 	// 	vTaskDelete(NULL);
 	// }
-	// do {
-	// 	for (int p = 0; p < 60; p++) {
-	// 		timeStamp += 60;
-	// 		addToLog(tempLog);
-	// 	}
+	
+	// for (int p = 0; p < 24* 60; p++) {
+	// 	timeStamp += 60;
+	// 	addToLog(tempLog);
+	// }
+
 	// 	scriptState = 0;
 	// 	do {
 	// 		len = getAllLogsScript(buffer, sizeof(buffer));
@@ -110,9 +109,6 @@ void sensorTask(void *pvParameters) {
 	// 	vTaskDelay( 200);
 	// } while (1);
 
-	// do {
-	// 	vTaskDelay(10);
-	// } while (1);
 
 	const udpTaskParams_t udpTaskParams = {.port = UDPSENSORPORT, .maxLen = MAXLEN};
 
