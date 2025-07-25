@@ -317,9 +317,11 @@ function timer() {
 }
 
 function clearChart() {
-	tempAndRHdata.removeRows(0, tempAndRHdata.getNumberOfRows());
+	RHdata.removeRows(0, RHdata.getNumberOfRows());
+	tdata.removeRows(0, tdata.getNumberOfRows());
 	CO2data.removeRows(0, CO2data.getNumberOfRows());
-	tRHchart.draw(tempAndRHdata, tempAndRHoptions);
+	RHchart.draw(RHdata, CO2Options);
+	tchart.draw(tdata, CO2Options);
 	CO2chart.draw(CO2data, CO2Options);
 }
 
@@ -329,7 +331,9 @@ function clearLog() {
 }
 
 function refreshChart() {
-	data.removeRows(0, data.getNumberOfRows());
+	RHdata.removeRows(0, RHdata.getNumberOfRows());
+	tdata.removeRows(0, tdata.getNumberOfRows());
+	CO2data.removeRows(0, CO2data.getNumberOfRows());
 	arr = getItem("getLogMeasValues");
 	plotArray(arr);
 }
