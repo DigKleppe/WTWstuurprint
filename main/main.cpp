@@ -43,6 +43,7 @@ extern "C" void app_main() {
 	}
 
 	err = loadSettings();
+	strcpy ( userSettings.moduleName, CONFIG_MDNS_HOSTNAME ); // for wtw monitor only 
 	// strcpy ( wifiSettings.SSID, "kahjskljahs");  // test
 	startLEDs();
 	wifiConnect();

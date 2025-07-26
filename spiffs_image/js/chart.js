@@ -326,7 +326,7 @@ function clearChart() {
 }
 
 function clearLog() {
-	sendItem("clearLog");
+	getItem("clearLog");
 	clearChart();
 }
 

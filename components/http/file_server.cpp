@@ -264,7 +264,7 @@ static esp_err_t download_get_handler(httpd_req_t *req) {
 					break;
 				if (strncmp(filename, g_pCGIs[i].pcCGIName, strlen(g_pCGIs[i].pcCGIName)) == 0) {
 					//		LWIP_DEBUGF(HTTPD_DEBUG,
-					//	printf("CGI %s\n", g_pCGIs[i].pcCGIName);
+					//printf("CGI %s\n", g_pCGIs[i].pcCGIName);
 					/*
 					 * We found a CGI that handles this URI so extract the
 					 * parameters and call the handler.
