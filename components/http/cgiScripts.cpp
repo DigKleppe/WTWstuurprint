@@ -16,13 +16,13 @@
 
 #include "cgiScripts.h"
 //#include "../../main/include/measureTask.h"
+
 #include "../../main/include/settings.h"
 #include "../http/include/httpd.h"
 
 #include "../../main/include/CGItable.h"
 //#include "../../main/include/log.h"
 //
-
 
 const tCGI *g_pCGIs;
 //int g_iNumCGIs;

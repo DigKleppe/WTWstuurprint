@@ -14,6 +14,7 @@
 #include <sys/time.h>
 
 #include "cgiScripts.h"
+#include "motorControlTask.h"
 
 
 #define MAX_STRLEN				 32
@@ -21,6 +22,7 @@
 
 typedef struct {
 	char moduleName[MAX_STRLEN+1];
+	motorSettings_t motorSettings[2];
 	char checkstr[MAX_STRLEN+1];
 }userSettings_t;
 

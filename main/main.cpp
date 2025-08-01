@@ -10,6 +10,7 @@
 #include "sensorTask.h"
 #include "settings.h"
 #include "wifiConnect.h"
+#include "motorControlTask.h"
 
 esp_err_t init_spiffs(void);
 
@@ -20,7 +21,6 @@ const char firmWareVersion[] = {"0.0"};
 const char *getFirmWareVersion() { return firmWareVersion; }
 
 uint32_t timeStamp = 1; // global timestamp for logging
-
 
 extern "C" void app_main() {
 	time_t now = 0;
@@ -48,6 +48,8 @@ extern "C" void app_main() {
 	wifiConnect();
 
 	xTaskCreate(sensorTask, "sensorTask", configMINIMAL_STACK_SIZE * 5, NULL, 1, NULL);
+	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, NULL);
+ 	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, NULL);
 
 	while (1) {
 		//	int rssi = getRssi();
