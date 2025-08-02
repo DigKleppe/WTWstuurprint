@@ -23,6 +23,16 @@
 typedef struct {
 	char moduleName[MAX_STRLEN+1];
 	motorSettings_t motorSettings[2];
+	int bathRoomFanTime;
+	int bathRoomFanMaxTime;
+	int motorSpeedMin;
+	int motorSpeedMax;
+	int manualSpeed2;
+	int manualSpeed3;
+	int CO2setpoint;
+	int PIDp;
+	int PIDi;
+	int PIDmaxI;
 	char checkstr[MAX_STRLEN+1];
 }userSettings_t;
 

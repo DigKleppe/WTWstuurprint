@@ -12,10 +12,13 @@ void sensorTask(void *pvParameters);
 int printLog(log_t *logToPrint, char *pBuffer, int idx);
 int printLog(log_t *logToPrint, char *pBuffer); 
 
+int getMaXCOValue ( void);  
+
 typedef enum { SENSORSTATUS_NOTPRESENT,SENSORSTATUS_OK, SENSORSTATUS_NOCOMM, SENSORSTATUS_ERROR} sensorStatus_t;
 typedef struct {
     sensorStatus_t status;
     int timeoutTmr;
+    int CO2val;
     uint32_t messageCntr;
 } sensorInfo_t;
 

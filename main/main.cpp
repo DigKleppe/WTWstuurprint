@@ -11,6 +11,8 @@
 #include "settings.h"
 #include "wifiConnect.h"
 #include "motorControlTask.h"
+#include "keys.h"
+#include "keyDefs.h"
 
 esp_err_t init_spiffs(void);
 
@@ -21,6 +23,32 @@ const char firmWareVersion[] = {"0.0"};
 const char *getFirmWareVersion() { return firmWareVersion; }
 
 uint32_t timeStamp = 1; // global timestamp for logging
+
+
+myKey_t getKeyPins(void) { 
+   uint32_t port =  REG_READ(GPIO_IN_REG);
+   port =~ port;
+   port &= (SK2 | SK3 | SB2 | SB3 | PB1 | PB2);
+   
+   return port; 
+}
+
+void initKeyPins (void) {
+  gpio_set_direction( GPIO_NUM_4, GPIO_MODE_INPUT);
+  gpio_set_pull_mode( GPIO_NUM_4, GPIO_FLOATING);
+  gpio_set_direction( GPIO_NUM_5, GPIO_MODE_INPUT);
+  gpio_set_pull_mode( GPIO_NUM_5, GPIO_FLOATING);
+  gpio_set_direction( GPIO_NUM_6, GPIO_MODE_INPUT);
+  gpio_set_pull_mode( GPIO_NUM_6, GPIO_FLOATING);
+  gpio_set_direction( GPIO_NUM_7, GPIO_MODE_INPUT);
+  gpio_set_pull_mode( GPIO_NUM_7, GPIO_FLOATING);
+  gpio_set_direction( GPIO_NUM_12, GPIO_MODE_INPUT);
+  gpio_set_pull_mode( GPIO_NUM_12, GPIO_FLOATING);
+  gpio_set_direction( GPIO_NUM_13, GPIO_MODE_INPUT);
+  gpio_set_pull_mode( GPIO_NUM_13, GPIO_FLOATING);
+}
+
+
 
 extern "C" void app_main() {
 	time_t now = 0;
@@ -50,11 +78,14 @@ extern "C" void app_main() {
 	xTaskCreate(sensorTask, "sensorTask", configMINIMAL_STACK_SIZE * 5, NULL, 1, NULL);
 	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, NULL);
  	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, NULL);
+ 	initKeyPins();
 
 	while (1) {
 		//	int rssi = getRssi();
 		//	ESP_LOGI(TAG, "RSSI: %d", rssi);
-		vTaskDelay(pdMS_TO_TICKS(200)); //
+		vTaskDelay(pdMS_TO_TICKS(20)); //
+		keysTimerHandler_ms(pdMS_TO_TICKS(20));
+		
 		time(&now);
 		localtime_r(&now, &timeinfo);
 		if (lastSecond != timeinfo.tm_sec) {

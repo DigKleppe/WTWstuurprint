@@ -24,6 +24,16 @@ char checkstr[MAX_STRLEN+1];
 userSettings_t userSettingsDefaults = {
 	{ CONFIG_MDNS_HOSTNAME },
 	{{ 0,0,false}, {0,0,false}},
+	30, 
+	40,
+	0,
+	100,
+	50,
+	100,
+	1100,
+	10,
+	10,
+	30,
 	{ USERSETTINGS_CHECKSTR }
 };
 

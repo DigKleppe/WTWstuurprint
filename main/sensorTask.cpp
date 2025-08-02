@@ -124,6 +124,7 @@ void sensorTask(void *pvParameters) {
 						sensorInfo[sensorNr].messageCntr++;
 						sensorInfo[sensorNr].status = SENSORSTATUS_OK;
 						sensorInfo[sensorNr].timeoutTmr = 0;
+						sensorInfo[sensorNr].CO2val = (int) sensorMssg.co2;
 						tempLog.co2[sensorNr] = sensorMssg.co2;
 						tempLog.temperature[sensorNr] = sensorMssg.temperature;
 						tempLog.hum[sensorNr] = sensorMssg.hum;
@@ -162,6 +163,18 @@ void sensorTask(void *pvParameters) {
 		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 }
+
+int getMaXCOValue ( void) {
+	int max = -1;
+	for (int sensorNr = 1; sensorNr < NR_SENSORS; sensorNr++) {	
+		if ( sensorInfo[sensorNr].status == SENSORSTATUS_OK ) {
+			if (sensorInfo[sensorNr].CO2val > max )
+				max = sensorInfo[sensorNr].CO2val;
+		}
+	}
+	return max;
+}
+
 
 // CGI stuff
 
