@@ -27,14 +27,14 @@ typedef struct {
 	int bathRoomFanMaxTime;
 	int motorSpeedMin;
 	int motorSpeedMax;
-	int manualSpeed2;
-	int manualSpeed3;
+	int fixedSpeed[3]; 
 	int CO2setpoint;
-	int PIDp;
-	int PIDi;
+	float PIDp;
+	float PIDi;
 	int PIDmaxI;
 	char checkstr[MAX_STRLEN+1];
 }userSettings_t;
+
 
 
 typedef struct {

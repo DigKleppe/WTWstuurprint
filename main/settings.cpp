@@ -28,8 +28,7 @@ userSettings_t userSettingsDefaults = {
 	40,
 	0,
 	100,
-	50,
-	100,
+	{ 5, 50, 100 },
 	1100,
 	10,
 	10,
@@ -38,7 +37,6 @@ userSettings_t userSettingsDefaults = {
 };
 
 userSettings_t userSettings;
-
 
 #define STORAGE_NAMESPACE "storage"
 static const char *TAG = "Settings";

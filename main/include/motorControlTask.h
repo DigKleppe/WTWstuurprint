@@ -22,5 +22,7 @@ typedef struct {
 } motorSettings_t;
 
 extern motorSettings_t motorsettings[2];
+void setRPM(motorID_t id, float rpm);
+void setRPMpercent(motorID_t id, int percent);
 
 #endif

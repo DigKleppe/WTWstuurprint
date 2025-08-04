@@ -5,12 +5,15 @@
 #include <freertos/task.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "soc/gpio_reg.h"
 
 #include "ledTask.h"
 #include "sensorTask.h"
 #include "settings.h"
 #include "wifiConnect.h"
 #include "motorControlTask.h"
+#include "temperatureSensorTask.h"
+#include "brinkTask.h"
 #include "keys.h"
 #include "keyDefs.h"
 
@@ -48,7 +51,7 @@ void initKeyPins (void) {
   gpio_set_pull_mode( GPIO_NUM_13, GPIO_FLOATING);
 }
 
-
+int cancelSettingsScript(char *pBuffer, int count); // dummy 
 
 extern "C" void app_main() {
 	time_t now = 0;
@@ -74,10 +77,13 @@ extern "C" void app_main() {
 	// strcpy ( wifiSettings.SSID, "kahjskljahs");  // test
 	startLEDs();
 	wifiConnect();
+	cancelSettingsScript(NULL, 0);
 
 	xTaskCreate(sensorTask, "sensorTask", configMINIMAL_STACK_SIZE * 5, NULL, 1, NULL);
+	xTaskCreate(temperatureSensorTask, "temperauurSesorTask", configMINIMAL_STACK_SIZE , NULL, 1, NULL);
 	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, NULL);
  	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, NULL);
+	xTaskCreate(brinkTask, "brinkTask", configMINIMAL_STACK_SIZE * 3, NULL, 1, NULL);
  	initKeyPins();
 
 	while (1) {

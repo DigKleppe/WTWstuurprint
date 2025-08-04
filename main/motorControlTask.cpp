@@ -103,6 +103,15 @@ void setRPM(motorID_t id, float rpm) {
 		rpm = MINRPM;
 	motor[id].pid.setDesiredValue(rpm);
 }
+void setRPMpercent(motorID_t id, int percent) {
+	if ( percent > 100 )
+		percent = 100;
+		
+	if (percent > 0)
+		setRPM(id, MINRPM + (float)percent * (MAXRPM - MINRPM) / 100.0);
+	else
+		motor[id].pid.setDesiredValue(0); // off
+}
 
 void motorControlTask(void *pvParameters) {
 	// motorID_t id = (motorID_t) pvParameters;

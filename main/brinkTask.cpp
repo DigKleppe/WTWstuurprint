@@ -5,166 +5,188 @@
  *      Author: dig
  */
 
+#include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
-#include "freertos/queue.h"
-
-#include "lwip/api.h"
-#include "lwip/arch.h"
-#include "lwip/mem.h"
-#include "lwip/opt.h"
-#include "settings.h"
-
 #include <string.h>
 
-#include "driver/gpio.h"
 #include "keyDefs.h"
 #include "keys.h"
-#include "wifiConnect.h"
-#include "sensorTask.h"
 #include "pid.h"
+#include "settings.h"
 
-extern time_t now;
-struct tm timeinfo;
+#include "motorControlTask.h"
+#include "sensorTask.h"
+#include "temperatureSensorTask.h"
+#include "udpClient.h"
+#include "wifiConnect.h"
+
+// #define MAXRPM 2900 //  2300 for R3G140-AW05-12 EBM-Papst, measured on old PCB: 2940
+// #define MINRPM 750
+// typedef enum { AFAN, TFAN, BOTHFANS } motorID_t;
+// typedef enum { MOTOR_K, MOTOR_FAIL } motorStatus_t;
+// int aanvoerTemperatuur = -10;
+// int afVoerTemperatuur = 10;
+// int co2 = 1200;
+// void setRPMpercent(motorID_t id, int percent) {};
+// int getMaXCOValue(void) { return co2; }
 
 #define OUTPUT_BRINKON GPIO_NUM_33
-#define CO2PERIOD 300 // sec  must be larger than interval transmitters
 
-#define IMAX 10.0
-#define P 1.0
-#define I 1.0
+#define IMAX 500
+#define P 0.2
+#define I 0.1
 #define D 0
 
-extern int CO2max; // received from udp server
-
-extern QueueHandle_t udpclientMssgbox;
-
-int co2test = 100;
-int manualLevel;
-int brinkLevel = 0;
-int lastCO2Value = 0;
-
+int overrideLevel; // CGI 0=  permanent off!
+int manualLevel;   // switches
 int bathRoomTimer;
 int bathRoomMaxTimer;
+int overrideTimer;
+
 extern int scriptState;
 
-void startBathroomTimer(void) {
-	if (bathRoomMaxTimer < 0)
-		bathRoomMaxTimer = userSettings.bathRoomFanMaxTime * 60; // once
-	bathRoomTimer = userSettings.bathRoomFanTime * 60;			 // as long as switch is in
+#define FREEZETEMPMIN -20
+
+// als aanvoertemperatuur < 0 wordt de aanvoer beperkt en een onbalans gecreeerd
+// bij - 20 maximale onbalans
+int antifreeze(int percent) {
+	float derate = 100;
+	if (aanvoerTemperatuur < 0) {
+		derate = 100.0 - (100.0 * (FREEZETEMPMIN - aanvoerTemperatuur)) / FREEZETEMPMIN;
+		printf(" derate %1.2f \r\n", derate);
+		percent = (percent * derate) / 100.0;
+	}
+	return percent;
 }
 
 void brinkTask(void *pvParameters) {
-	int udpTimer = 20;
-	int debounce = 0;
-	int testValue = 0;
-    int CO2Value = 0;
+	int udpTimer = 2;
+	int CO2Value = 0;
 	char buf[64];
-    Pid pid;
+	Pid pid;
+	int tempRPMToevoer = 0, tempRPMafvoer = 0;
 
 	gpio_set_direction(OUTPUT_BRINKON, GPIO_MODE_OUTPUT);
 
-    pid.setImaxImin(IMAX, -IMAX);
-	pid.setPIDValues(I, D); // todo usersettings
-    pid.setDesiredValue( 1100) ;
-
-
 	while (1) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
+		tempRPMToevoer = 0;
+		tempRPMafvoer = 0;
 
+		pid.setImaxImin(userSettings.PIDmaxI, -userSettings.PIDmaxI);
+		pid.setPIDValues(userSettings.PIDp, userSettings.PIDi, 0);
+		pid.setDesiredValue(userSettings.CO2setpoint);
 
-
-
-
-
-		CO2timer--;
-		if (CO2timer == 0) {
-			lastCO2Value = CO2max;
-			CO2max = 0;
-			CO2timer = CO2PERIOD;
-		}
-		if (lastCO2Value > 0) // highest value in CO2PERIOD
-			testValue = lastCO2Value;
-		else
-			testValue = CO2max;
-
-        
-        printf("\nbrinklev %d ", brinkLevel);
-
-		manualLevel = 0;
 		bool switchIn = false;
 		if (keysRT & SB2) { // badkamer
 			switchIn = true;
-			startBathroomTimer();
 			if (manualLevel < 3) {
-				manualLevel = 2;
+				manualLevel = 1;
 			}
 		}
 		if (keysRT & SB3) {
 			switchIn = true;
-			manualLevel = 3;
-			startBathroomTimer();
+			manualLevel = 2;
 		}
-		if (switchIn) // switch badkamer in
-			startBathroomTimer();
-		else
-			bathRoomMaxTimer = -1;
+		if (switchIn) {										   // switch badkamer in
+			bathRoomTimer = userSettings.bathRoomFanTime * 60; // as long as switch is in
+			if (bathRoomMaxTimer < 0)
+				bathRoomMaxTimer = userSettings.bathRoomFanMaxTime * 60; // once
+		} else
+			bathRoomMaxTimer = -1; // ready to start
 
-		if (bathRoomTimer < 0)
-			manualLevel = 0;
+		if (bathRoomTimer > 0) // timer running. leave manualLevel
+			bathRoomTimer--;
 		else {
-			if (bathRoomTimer > 0) // timer running. leave manualLevel
-				bathRoomTimer--;
-			else {
-				manualLevel = 0; //
-				bathRoomTimer = -1;
-			}
-		}
-		if (bathRoomMaxTimer > 0)
-			bathRoomMaxTimer--;
-		else {				 // forgot to switch off SB2 SB3
 			manualLevel = 0; //
+			bathRoomTimer = -1;
+			bathRoomMaxTimer = -1;
+		}
+
+		if (bathRoomMaxTimer > 0) {
+			bathRoomMaxTimer--;
+			if (bathRoomMaxTimer == 0)
+				manualLevel = 0; // forgot to switch off SB2 SB3
 		}
 
 		if (keysRT & SK2) // keuken
-            if ( manualLevel == 0)
-			    manualLevel = 2;
+			if (manualLevel == 0)
+				manualLevel = 1;
 
 		if (keysRT & SK3)
-			manualLevel = 3;
+			manualLevel = 2;
 
-		if (manualLevel > 0)
-			brinkLevel = manualLevel;
+		CO2Value = getMaXCOValue(); // from sensors
 
-		printf(" Final lev: %d ", brinkLevel);
+		if (CO2Value > 0) { // minstens 1 sensor actief?
+			tempRPMafvoer = -pid.update(CO2Value);
+			tempRPMToevoer = tempRPMafvoer;
+		} else {
+			tempRPMafvoer = userSettings.motorSpeedMin; // minimum
+			tempRPMToevoer = tempRPMafvoer;
+		}
 
-		if (brinkLevel > 0) {
-			gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on
-			printf("\nbrink on ");
+		if (manualLevel >= 0) { // set by switches
+			if (userSettings.fixedSpeed[manualLevel - 1] > tempRPMafvoer) {
+				tempRPMafvoer = userSettings.fixedSpeed[manualLevel - 1];
+				tempRPMToevoer = userSettings.fixedSpeed[manualLevel - 1];
+			}
+		}
+
+		if (tempRPMafvoer == 0) { // vorstbeveiliging als aanvoertemp < 0 en stilstaande motoren
+			if (aanvoerTemperatuur < -2)
+				tempRPMafvoer = 1; // laagste toerental
 		} else
-			gpio_set_level(OUTPUT_BRINKON, 0);
+			tempRPMToevoer = antifreeze(tempRPMToevoer); // derate toevoer indien nodig
+
+		switch (overrideLevel) {  // from CGI website
+		case 0:
+			break;
+		case 1:
+		case 2:
+			tempRPMafvoer = userSettings.fixedSpeed[overrideLevel - 1];
+			tempRPMToevoer = userSettings.fixedSpeed[overrideLevel - 1];
+			if (overrideTimer-- <= 0)
+				overrideLevel = 0;
+			break;
+
+		case -1: // permanent off!
+			tempRPMToevoer = 0;
+			tempRPMafvoer = 0;
+			break;
+		default:
+			break;
+		}
+
+		setRPMpercent(TFAN, tempRPMToevoer);
+		setRPMpercent(AFAN, tempRPMafvoer);
 
 		if (udpTimer)
 			udpTimer--;
 		else {
-			sprintf(buf, "Brink: maxCO2Value:%d level:%d timer:%d\n\r", lastCO2Value, brinkLevel, bathRoomTimer);
+			sprintf(buf, "Brink: maxCO2:%d Toe: %d Af:%d BRtimer:%d BRmaxTmr:%d \n\r", CO2Value, tempRPMToevoer, tempRPMafvoer, bathRoomTimer, bathRoomMaxTimer);
 			UDPsendMssg(5002, (void *)buf, strlen(buf));
-			udpTimer = 20;
+			printf("%s", buf);
+			udpTimer = 2;
 		}
+
+		if (tempRPMafvoer > 0)
+			gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on
+		else
+			gpio_set_level(OUTPUT_BRINKON, 0);
 	}
 }
 
-// set from CGI
+// set from CGI , -1 is permanent off!
 void setManualLevel(int level) {
-	manualLevel = level;
+	overrideLevel = level;
 	switch (level) {
 	case 0:
-		bathRoomTimer = 0; // timer off
-		bathRoomMaxTimer = 0;
-		brinkLevel = 0;
+	case 1:
+		overrideTimer = 60 * 60; // 1 hour max
 		break;
 
 	default:
 		break;
-	}
+	};
 }

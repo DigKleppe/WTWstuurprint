@@ -37,7 +37,7 @@ const static char *TAG = "tSens";
 #define R25		550.0
 #define TC 		-1.96
 
-float brinkTemperatureIn, brinkTemperatureOut;
+float aanvoerTemperatuur, afvoerTemperatuur;
 
 typedef enum { TSIN, TSOUT, TSREF } sensorID_t;
 
@@ -83,7 +83,7 @@ static bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_att
 	return calibrated;
 }
 
-void tSensorTask(void *pvParameter) {
+void temperatureSensorTask(void *pvParameter) {
 
 	//-------------ADC1 Init---------------//
 	adc_oneshot_unit_handle_t adc1_handle;
@@ -114,18 +114,18 @@ void tSensorTask(void *pvParameter) {
 		float mVCC = voltage[TSREF][0] * 3.0; // reference = 1/3 VCC
 		float Rin = voltage[TSIN][0] * RREF / (mVCC - voltage[TSIN][0]);
 		if (( Rin > 600) || ( Rin < 400))
-			brinkTemperatureIn = 9999;
+			aanvoerTemperatuur = 9999;
 		else
-			brinkTemperatureIn = 25+ (R25-Rin)/TC;
+			aanvoerTemperatuur = 25+ (R25-Rin)/TC;
 
 		float Rout = voltage[TSOUT][0] * RREF / (mVCC - voltage[TSOUT][0]);
 
 		if (( Rout > 600) || ( Rout < 400))
-			brinkTemperatureOut = 9999;
+			afvoerTemperatuur = 9999;
 		else
-			brinkTemperatureOut = 25+ (R25-Rout)/TC;
+			afvoerTemperatuur = 25+ (R25-Rout)/TC;
 
-		printf( "tin: %1.2f tout: %2.2f\n\r" ,brinkTemperatureIn, brinkTemperatureOut);
+		printf( "tin: %1.2f tout: %2.2f\n\r" ,aanvoerTemperatuur, afvoerTemperatuur);
 			
 		vTaskDelay(pdMS_TO_TICKS(2000));
 	}
