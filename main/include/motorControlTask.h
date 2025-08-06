@@ -1,6 +1,7 @@
 #ifndef MOTORCONTROL_H
 #define MOTORCONTROL_H
 
+#include "cgiScripts.h"
 #include "../../components/pid/include/pid.h"
 
 #define MAXRPM 2900 //  2300 for R3G140-AW05-12 EBM-Papst, measured on old PCB: 2940
@@ -24,5 +25,7 @@ typedef struct {
 extern motorSettings_t motorsettings[2];
 void setRPM(motorID_t id, float rpm);
 void setRPMpercent(motorID_t id, int percent);
+
+extern const CGIdesc_t motorInfoDescriptorTable[];
 
 #endif

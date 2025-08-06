@@ -1,44 +1,64 @@
 
 #include "cgiScripts.h"
+#include "motorControlTask.h"
+#include "sensorTask.h"
 #include "settings.h"
 #include "wifiConnect.h"
 #include <string.h>
 
 #include "esp_log.h"
-const char * TAG = "commonscripts";
+const char *TAG = "commonscripts";
 
 #include "esp_log.h"
 extern int scriptState;
 
-
 const CGIdesc_t writeVarDescriptorTable[] = {
-    {"Badkamerventilatie nalooptijd ( min)", &userSettings.bathRoomFanTime, INT, 1},
-    {"Badkamerventilatie max nalooptijd ( min) ", &userSettings.bathRoomFanMaxTime, INT, 1},
-    {"Minimum toerental (%%)", &userSettings.motorSpeedMin, INT, 1},
-    {"Maximum toerental (%%)", &userSettings.motorSpeedMax, INT, 1},
-    {"Toerental zonder sensoren (%%)", &userSettings.fixedSpeed[0], INT, 1},
-    {"Toerental stand 2 schakelaars (%%) ", &userSettings.fixedSpeed[1], INT, 1},
-    {"Toerental stand 3 schakelaars {%%)", &userSettings.fixedSpeed[2], INT, 1},
-    {"CO2 grenswaarde (ppm)", &userSettings.CO2setpoint, INT, 1},
-    {"PID P waarde", &userSettings.PIDp, FLT, 1},
-    {"PID I waarde", &userSettings.PIDi, FLT, 1},
-    {"PID Imax waarde", &userSettings.PIDmaxI, INT, 1},
-    {NULL, NULL, INT, 1},
+	{"Badkamerventilatie nalooptijd (min)", &userSettings.bathRoomFanTime, INT, 1},
+	{"Badkamerventilatie max nalooptijd (min) ", &userSettings.bathRoomFanMaxTime, INT, 1},
+	{"Minimum toerental (%%)", &userSettings.motorSpeedMin, INT, 1},
+	{"Maximum toerental (%%)", &userSettings.motorSpeedMax, INT, 1},
+	{"Toerental zonder sensoren (%%)", &userSettings.fixedSpeed[0], INT, 1},
+	{"Toerental stand 2 schakelaars (%%) ", &userSettings.fixedSpeed[1], INT, 1},
+	{"Toerental stand 3 schakelaars {%%)", &userSettings.fixedSpeed[2], INT, 1},
+	{"CO2 grenswaarde (ppm)", &userSettings.CO2setpoint, INT, 1},
+	{"PID P waarde", &userSettings.PIDp, FLT, 1},
+	{"PID I waarde", &userSettings.PIDi, FLT, 1},
+	{"PID Imax waarde", &userSettings.PIDmaxI, INT, 1},
+	{"Min buitentemperatuur bypass", &userSettings.MinBuitenTemperatuurbypass, INT, 1},
+	{"Max binnentemperatuur bypass", &userSettings.MaxBuitenTemperatuurbypass, INT, 1},
+	{NULL, NULL, INT, 1},
 };
 
 
-#define NRWRITEVARDESCRIPTORS (sizeof (writeVarDescriptorTable) / sizeof (CGIdesc_t))
 
-int getSettingsTableScript(char *pBuffer, int count) {
+
+
+int getCGItable (const CGIdesc_t *descr, char *pBuffer, int count) {
 	int len = 0;
-    const CGIdesc_t * descr = writeVarDescriptorTable;
+	do {
+		len += sprintf(pBuffer + len, "%s,", descr->name);
+		switch (descr->type) {
+		case INT:
+			len += sprintf(pBuffer + len, "%d\n", *(int *)descr->pValue);
+			break;
+		case FLT:
+			len += sprintf(pBuffer + len, "%1.2f\n,", *(float *)descr->pValue);
+			break;
+		default:
+			break;
+		}
+		descr++;
+	} while (descr->name != NULL);
+	return len;
+}
+
+int getSettingsScript(char *pBuffer, int count) {
+	int len = 0;
 	switch (scriptState) {
 	case 0:
 		scriptState++;
-        len = sprintf(pBuffer,"Parameter, Waarde,Stel in\n");
-        do {
-            len += sprintf(pBuffer + len, "%s\n",descr++->name);
-        } while (*descr->name != NULL) ;
+		len = sprintf(pBuffer, "Parameter, Waarde,Stel in\n");
+		len += getCGItable( writeVarDescriptorTable, pBuffer+len, count);
 		return len;
 		break;
 	default:
@@ -57,8 +77,9 @@ int cancelSettingsScript(char *pBuffer, int count) {
 	return 0;
 }
 
-void parseCGIWriteData(char *buf, int received) {
+#define NRWRITEVARDESCRIPTORS (sizeof(writeVarDescriptorTable) / sizeof(CGIdesc_t))
 
+void parseCGIWriteData(char *buf, int received) {
 	bool save = false;
 
 	if (strncmp(buf, "forgetWifi", 10) == 0) {
@@ -67,12 +88,12 @@ void parseCGIWriteData(char *buf, int received) {
 		strcpy(wifiSettings.pwd, "xx");
 		saveSettings();
 		esp_restart();
-    }
-
-	if (strncmp(buf, "setVal:", 7) == 0) { // calvalues are written , in sensirionTasks write these to SCD30
+	}
+	if (strncmp(buf, "setVal:", 7) == 0) { // values are written , in sensirionTasks write these to SCD30
 		if (readActionScript(&buf[7], writeVarDescriptorTable, NRWRITEVARDESCRIPTORS)) {
 			save = true;
 		}
 	}
 	if (save)
-		saveSettings();}
+		saveSettings();
+}

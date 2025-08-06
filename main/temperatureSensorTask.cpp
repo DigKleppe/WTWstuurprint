@@ -37,7 +37,7 @@ const static char *TAG = "tSens";
 #define R25		550.0
 #define TC 		-1.96
 
-float aanvoerTemperatuur, afvoerTemperatuur;
+float binnenTemperatuur, buitenTemperatuur;
 
 typedef enum { TSIN, TSOUT, TSREF } sensorID_t;
 
@@ -114,18 +114,18 @@ void temperatureSensorTask(void *pvParameter) {
 		float mVCC = voltage[TSREF][0] * 3.0; // reference = 1/3 VCC
 		float Rin = voltage[TSIN][0] * RREF / (mVCC - voltage[TSIN][0]);
 		if (( Rin > 600) || ( Rin < 400))
-			aanvoerTemperatuur = 9999;
+			binnenTemperatuur = 9999;
 		else
-			aanvoerTemperatuur = 25+ (R25-Rin)/TC;
+			binnenTemperatuur = 25+ (R25-Rin)/TC;
 
 		float Rout = voltage[TSOUT][0] * RREF / (mVCC - voltage[TSOUT][0]);
 
 		if (( Rout > 600) || ( Rout < 400))
-			afvoerTemperatuur = 9999;
+			buitenTemperatuur = 9999;
 		else
-			afvoerTemperatuur = 25+ (R25-Rout)/TC;
+			buitenTemperatuur = 25+ (R25-Rout)/TC;
 
-		printf( "tin: %1.2f tout: %2.2f\n\r" ,aanvoerTemperatuur, afvoerTemperatuur);
+		printf( "tin: %1.2f tout: %2.2f\n\r" ,binnenTemperatuur, buitenTemperatuur);
 			
 		vTaskDelay(pdMS_TO_TICKS(2000));
 	}

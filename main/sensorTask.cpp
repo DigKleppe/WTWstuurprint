@@ -18,6 +18,7 @@
 #include "settings.h"
 #include "udpServer.h"
 #include "wifiConnect.h"
+#include "CGIcommonScripts.h"
 
 #include <cstring>
 #include <math.h>
@@ -125,6 +126,8 @@ void sensorTask(void *pvParameters) {
 						sensorInfo[sensorNr].status = SENSORSTATUS_OK;
 						sensorInfo[sensorNr].timeoutTmr = 0;
 						sensorInfo[sensorNr].CO2val = (int) sensorMssg.co2;
+						sensorInfo[sensorNr].RH = (int) sensorMssg.hum;
+						sensorInfo[sensorNr].rssi =  sensorMssg.rssi;
 						tempLog.co2[sensorNr] = sensorMssg.co2;
 						tempLog.temperature[sensorNr] = sensorMssg.temperature;
 						tempLog.hum[sensorNr] = sensorMssg.hum;
@@ -213,15 +216,64 @@ int getRTMeasValuesScript(char *pBuffer, int count) {
 	return 0;
 }
 
-int getSensorStatusScript(char *pBuffer, int count) {
+const CGIdesc_t sensorInfoDescriptorTable[][6] ={ 
+{
+	{"RefSensor CO2 (ppm)", &sensorInfo[1].CO2val, INT, 1},
+	{"RefSensor temperatuur (°C)", &sensorInfo[1].temperature, FLT, 1},
+	{"RefSensor RH (%%)", &sensorInfo[1].RH, INT, 1},
+	{"RefSensor RSSI", &sensorInfo[1].rssi, INT, 1},
+	{"RefSensor berichten", &sensorInfo[1].messageCntr, INT, 1},
+	{NULL, NULL, INT, 1}
+} ,
+{
+	{"Sensor 1 CO2 (ppm)", &sensorInfo[1].CO2val, INT, 1},
+	{"Sensor 1 temperatuur (°C)", &sensorInfo[1].temperature, FLT, 1},
+	{"Sensor 1 RH (%%)", &sensorInfo[1].RH, INT, 1},
+	{"Sensor 1 RSSI", &sensorInfo[1].rssi, INT, 1},
+	{"Sensor 1 berichten", &sensorInfo[1].messageCntr, INT, 1},
+	{NULL, NULL, INT, 1}
+} ,
+{
+	{"Sensor 2 CO2 (ppm)", &sensorInfo[2].CO2val, INT, 1},
+	{"Sensor 2 temperatuur (°C)", &sensorInfo[2].temperature, FLT, 1},
+	{"Sensor 2 RH (%%)", &sensorInfo[2].RH, INT, 1},
+	{"Sensor 2 RSSI", &sensorInfo[2].rssi, INT, 1},
+	{"Sensor 2 berichten", &sensorInfo[2].messageCntr, INT, 1},
+	{NULL, NULL, INT, 1}
+},
+{
+	{"Sensor 3 CO2 (ppm)", &sensorInfo[3].CO2val, INT, 1},
+	{"Sensor 3 temperatuur (°C)", &sensorInfo[3].temperature, FLT, 1},
+	{"Sensor 3 RH (%%)", &sensorInfo[3].RH, INT, 1},
+	{"Sensor 3 RSSI", &sensorInfo[3].rssi, INT, 1},
+	{"Sensor 3 berichten", &sensorInfo[3].messageCntr, INT, 1},
+	{NULL, NULL, INT, 1}
+},
+{
+	{"Sensor 4 CO2 (ppm)", &sensorInfo[4].CO2val, INT, 1},
+	{"Sensor 4 temperatuur (°C)", &sensorInfo[4].temperature, FLT, 1},
+	{"Sensor 4 RH (%%)", &sensorInfo[4].RH, INT, 1},
+	{"Sensor 4 RSSI", &sensorInfo[4].rssi, INT, 1},
+	{"Sensor 4 berichten", &sensorInfo[4].messageCntr, INT, 1},
+	{NULL, NULL, INT, 1}
+}
+};
+
+int getSensorInfoScript(char *pBuffer, int count) {
 	int len = 0;
+	bool sensorFound = false;
 	switch (scriptState) {
 	case 0:
 		scriptState++;
-		for (int idx = 0; idx < NR_SENSORS; idx++) {
-			len += sprintf(pBuffer + len, "S%d,", idx );
-			len += sprintf(pBuffer + len, "%d,", (int)sensorInfo[idx].status);
-			len += sprintf(pBuffer + len, "%u", (unsigned int)sensorInfo[idx].messageCntr);
+		len = sprintf(pBuffer, "Parameter, Waarde,Stel in\n");
+		for ( int n = 0; n < NR_SENSORS; n++) {
+			if (sensorInfo[n].status != SENSORSTATUS_NOTPRESENT ) {
+				len += getCGItable (sensorInfoDescriptorTable[n], pBuffer+len, count);
+				sensorFound = true;
+			}
+		}	
+		if ( !sensorFound) {
+			len += sprintf(pBuffer + len, "Fout, Geen sensoren gevonden\n");
 		}
 		return len;
 	default:
@@ -232,26 +284,8 @@ int getSensorStatusScript(char *pBuffer, int count) {
 
 int getInfoValuesScript(char *pBuffer, int count) {
 	int len = 0;
-	bool sensorFound = false;
 	switch (scriptState) {
 	case 0:
-		scriptState++;
-		len = sprintf(pBuffer, "%s\n", "Naam,Waarde");
-		for (int idx = 0; idx < NR_SENSORS; idx++) {
-			if (sensorInfo[idx].status != SENSORSTATUS_NOTPRESENT) {
-				sensorFound = true;
-				len += sprintf(pBuffer + len, "Sensor, %d\n", idx + 1);
-				len += sprintf(pBuffer + len, "CO2,%3.0f\n", lastVal.co2[idx]);
-				len += sprintf(pBuffer + len, "temperatuur,%3.2f\n", lastVal.temperature[idx]);
-				len += sprintf(pBuffer + len, "RV,%3.0f\n", lastVal.hum[idx]);
-				len += sprintf(pBuffer + len, "status, %d,", (int)sensorInfo[idx].status);
-				len += sprintf(pBuffer + len, "berichten, %u\n", (unsigned int) sensorInfo[idx].messageCntr);
-			}
-		}
-		if (!sensorFound)
-			len += sprintf(pBuffer + len, "Fout, Geen Sensoren gevonden\n");
-		return len;
-	case 1:
 		scriptState++;
 		//		len = sprintf(pBuffer + len, "%s,%1.2f\n", "temperatuur offset", userSettings.temperatureOffset);
 		len += sprintf(pBuffer + len, "%s,%s\n", "firmwareversie", getFirmWareVersion());

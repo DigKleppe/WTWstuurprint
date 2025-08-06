@@ -4,99 +4,13 @@ var firstTimeCal = true;
 
 var body;
 var infoTbl;
-var calTbl;
+var settingsTbl;
 var nameTbl;
 var tblBody;
 var INFOTABLENAME = "infoTable";
-var CALTABLENAME = "calTable";
-var NAMETABLENAME = "nameTable";
-
-var calRun = false;
-var charge = true;
-var testCurrent;
-
-function makeNameTable(descriptorData) {
-	var colls;
-	nameTbl = document.getElementById(NAMETABLENAME);// ocument.createElement("table");
-	var x = nameTbl.rows.length;
-	for (var r = 0; r < x; r++) {
-		nameTbl.deleteRow(-1);
-	}
-	tblBody = document.createElement("tbody");
-
-	var rows = descriptorData.split("\n");
-
-	for (var i = 0; i < rows.length - 1; i++) {
-		var row = document.createElement("tr");
-		if (i == 0) {
-			colls = rows[i].split(",");
-			for (var j = 0; j < colls.length; j++) {
-				var cell = document.createElement("th");
-				var cellText = document.createTextNode(colls[j]);
-				cell.appendChild(cellText);
-				row.appendChild(cell);
-			}
-		}
-		else {
-			var cell = document.createElement("td");
-			var cellText = document.createTextNode(rows[i]);
-			cell.appendChild(cellText);
-			row.appendChild(cell);
-
-			cell = document.createElement("td");
-			var input = document.createElement("input");
-			input.setAttribute("type", "text");
-			cell.appendChild(input);
-			row.appendChild(cell);
-
-			cell = document.createElement("td");
-			cell.setAttribute("nameItem", i);
-
-			var button = document.createElement("button");
-			button.innerHTML = "Stel in";
-			button.className = "button-3";
-			cell.appendChild(button);
-			row.appendChild(cell);
-
-			cell = document.createElement("td");
-			cell.setAttribute("nameItem", i);
-
-			var button = document.createElement("button");
-			button.innerHTML = "Herstel";
-			button.className = "button-3";
-			button.setAttribute("id", "set" + i);
-
-			cell.appendChild(button);
-			row.appendChild(cell);
-		}
-		tblBody.appendChild(row);
-	}
-	nameTbl.appendChild(tblBody);
-
-	const cells = document.querySelectorAll("td[nameItem]");
-	cells.forEach(cell => {
-		cell.addEventListener('click', function() { setNameFunction(cell.closest('tr').rowIndex, cell.cellIndex) });
-	});
-}
-
-function setNameFunction(row, coll) {
-	console.log("Row index:" + row + " Collumn: " + coll);
-	var item = nameTbl.rows[row].cells[0].innerText;
-
-	if (coll == 3)
-		sendItem("revertName");
-	else {
-		var value = nameTbl.rows[row].cells[1].firstChild.value;
-		console.log(item + value);
-		if (value != "") {
-			sendItem("setName:moduleName=" + value);
-		}
-		makeNameTable(value);
-	}
-}
+var SETTINGSTABLENAME = "settingsTable";
 
 function makeInfoTable(descriptorData) {
-
 	infoTbl = document.getElementById(INFOTABLENAME);// ocument.createElement("table");
 	var x = infoTbl.rows.length
 	for (var r = 0; r < x; r++) {
@@ -125,13 +39,13 @@ function makeInfoTable(descriptorData) {
 	infoTbl.appendChild(tblBody);
 }
 
-function makeCalTable(descriptorData) {
+function makeSettingsTable(descriptorData) {
 
 	var colls;
-	calTbl = document.getElementById(CALTABLENAME);// ocument.createElement("table");
-	var x = calTbl.rows.length;
+	settingsTbl = document.getElementById(SETTINGSTABLENAME);// ocument.createElement("table");
+	var x = settingsTbl.rows.length;
 	for (var r = 0; r < x; r++) {
-		calTbl.deleteRow(-1);
+		settingsTbl.deleteRow(-1);
 	}
 	tblBody = document.createElement("tbody");
 
@@ -149,44 +63,45 @@ function makeCalTable(descriptorData) {
 			}
 		}
 		else {
-			var cell = document.createElement("td");
+			var cell = document.createElement("td");  // name
 			var cellText = document.createTextNode(rows[i]);
 			cell.appendChild(cellText);
 			row.appendChild(cell);
 
-			cell = document.createElement("td");
+			cell = document.createElement("td");  // value
 			var input = document.createElement("input");
 			input.setAttribute("type", "number");
 			cell.appendChild(input);
 			row.appendChild(cell);
 
-			cell = document.createElement("td");
-			cell.setAttribute("calItem", i);
+			// cell = document.createElement("td");
+			// cell.setAttribute("calItem", i);
 
 			var button = document.createElement("button");
 			button.innerHTML = "Stel in";
 			//	button.className = "button buttonGreen";
 			button.className = "button-3";
 			cell.appendChild(button);
+			cell.setAttribute("settingsItem", i);
 			row.appendChild(cell);
 
-			cell = document.createElement("td");
-			cell.setAttribute("calItem", i);
+			// cell = document.createElement("td");
+			// cell.setAttribute("calItem", i);
 
-			var button = document.createElement("button");
-			button.innerHTML = "Herstel";
-			//	button.className = "button buttonGreen";
-			button.className = "button-3";
-			button.setAttribute("id", "set" + i);
+			// var button = document.createElement("button");
+			// button.innerHTML = "Herstel";
+			// //	button.className = "button buttonGreen";
+			// button.className = "button-3";
+			// button.setAttribute("id", "set" + i);
 
-			cell.appendChild(button);
-			row.appendChild(cell);
+			// cell.appendChild(button);
+			// row.appendChild(cell);
 		}
 		tblBody.appendChild(row);
 	}
-	calTbl.appendChild(tblBody);
+	settingsTbl.appendChild(tblBody);
 
-	const cells = document.querySelectorAll("td[calItem]");
+	const cells = document.querySelectorAll("td[settingsItem]");
 	cells.forEach(cell => {
 		cell.addEventListener('click', function() { setCalFunction(cell.closest('tr').rowIndex, cell.cellIndex) });
 	});
@@ -196,17 +111,17 @@ function readInfo(str) {
 	makeInfoTable(str);
 }
 
-function readCalInfo(str) {
+function readSettingsInfo(str) {
 	if (SIMULATE) {
 		if (firstTimeCal) {
-			makeCalTable(str);
+			makeSettingsTable(str);
 			firstTimeCal = false;
 		}
 		return;
 	}
 	else {
-		str = getItem("getCalValues");
-		makeCalTable(str);
+		str = getItem("getSettings");
+		makeSettingsTable(str);
 	}
 }
 
@@ -221,18 +136,11 @@ function cancel() {
 
 function setCalFunction(row, coll) {
 	console.log("Row index:" + row + " Collumn: " + coll);
-	var item = calTbl.rows[row].cells[0].innerText;
-
-	if (coll == 3)
-		sendItem("revertCal:" + item);
-	else {
+	var item = settingsTbl.rows[row].cells[0].innerText;
 		//	var x = calTbl.rows[2].cells[3].firstChild.value;
-		var value = calTbl.rows[row].cells[1].firstChild.value;
-		console.log(item + value);
-		//	if (value != "") {
-		sendItem("setCal:" + item + '=' + value);
-		//	}
-	}
+	var value = settingsTbl.rows[row].cells[1].firstChild.value;
+	console.log(item + value);
+	sendItem("setVal:" + item + '=' + value);
 }
 
 
@@ -257,20 +165,9 @@ function initSettings() {
 		//document.visibilityState
 
 	}
-	readCalInfo();
-	str = getItem("getSensorName");
-	makeNameTable(str);
-	var rbutton = document.getElementById("c1");
-	rbutton.checked = true;
-	testCurrent = rbutton.value;
+	readSettingsInfo();
 
-	rbutton.addEventListener("click", setCurrentLo);
-	rbutton = document.getElementById("c2");
-	rbutton.addEventListener("click", setCurrentMed);
-	rbutton = document.getElementById("c3");
-	rbutton.addEventListener("click", setCurrentHi);
-
-	setInterval(function() { settingsTimer() }, 1000);
+//	setInterval(function() { settingsTimer() }, 1000);
 }
 
 function tempCal() {
@@ -306,60 +203,5 @@ function settingsTimer() {
 	if (document.visibilityState == "hidden")
 		return;
 	getInfo();
-}
-
-function startStop() {
-	calRun = !calRun;
-	var button = document.getElementById("StartStopButton");
-	if (calRun) {
-		button.innerHTML = "** Stop  **";
-		button.style.backgroundColor = "Red";
-		sendItem("setCurrent=" + testCurrent);
-	}
-	else {
-		button.innerHTML = "** Start **";
-		button.style.backgroundColor = "Blue";
-		sendItem("stopCal=1");
-	}
-}
-
-function setMode() {
-	var button = document.getElementById("setModeButton");
-	charge = !charge;
-	if (charge) {
-		button.innerHTML = "  Laden";
-		button.style.backgroundColor = "Red";
-		if (testCurrent < 0)
-			testCurrent = -testCurrent;
-	}
-	else {
-		button.innerHTML = "Ontladen";
-		button.style.backgroundColor = "Blue";
-		if (testCurrent > 0)
-			testCurrent = -testCurrent;
-	}
-	if (calRun)
-		sendItem("setCurrent=" + testCurrent);
-}
-
-function setCurrent( curr){
-	if (charge == false)
-		curr = -curr;
-	if (calRun)
-		sendItem("setCurrent=" + curr);
-}
-
-function setCurrentLo() {
-	var rb = document.getElementById("c1");
-	setCurrent (rb.value);
-
-}
-function setCurrentMed() {
-	var rb = document.getElementById("c2");
-	setCurrent (rb.value);
-}
-function setCurrentHi() {
-	var rb = document.getElementById("c3");
-	setCurrent (rb.value);
 }
 

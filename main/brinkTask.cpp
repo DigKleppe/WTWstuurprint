@@ -30,12 +30,9 @@
 // void setRPMpercent(motorID_t id, int percent) {};
 // int getMaXCOValue(void) { return co2; }
 
-#define OUTPUT_BRINKON GPIO_NUM_33
+#define OUTPUT_BRINKON 	GPIO_NUM_33
+#define OUTPUT_BYPASS	GPIO_NUM_9
 
-#define IMAX 500
-#define P 0.2
-#define I 0.1
-#define D 0
 
 int overrideLevel; // CGI 0=  permanent off!
 int manualLevel;   // switches
@@ -51,8 +48,8 @@ extern int scriptState;
 // bij - 20 maximale onbalans
 int antifreeze(int percent) {
 	float derate = 100;
-	if (aanvoerTemperatuur < 0) {
-		derate = 100.0 - (100.0 * (FREEZETEMPMIN - aanvoerTemperatuur)) / FREEZETEMPMIN;
+	if (buitenTemperatuur < 0) {
+		derate = 100.0 - (100.0 * (FREEZETEMPMIN - buitenTemperatuur)) / FREEZETEMPMIN;
 		printf(" derate %1.2f \r\n", derate);
 		percent = (percent * derate) / 100.0;
 	}
@@ -134,7 +131,7 @@ void brinkTask(void *pvParameters) {
 		}
 
 		if (tempRPMafvoer == 0) { // vorstbeveiliging als aanvoertemp < 0 en stilstaande motoren
-			if (aanvoerTemperatuur < -2)
+			if (binnenTemperatuur < -2)
 				tempRPMafvoer = 1; // laagste toerental
 		} else
 			tempRPMToevoer = antifreeze(tempRPMToevoer); // derate toevoer indien nodig
@@ -174,6 +171,16 @@ void brinkTask(void *pvParameters) {
 			gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on
 		else
 			gpio_set_level(OUTPUT_BRINKON, 0);
+
+
+		if (( binnenTemperatuur > userSettings.MaxBuitenTemperatuurbypass) && ( binnenTemperatuur > userSettings.MinBuitenTemperatuurbypass)) {
+			if (buitenTemperatuur < binnenTemperatuur) 
+				gpio_set_level ( OUTPUT_BYPASS, 1);
+			else
+				gpio_set_level ( OUTPUT_BYPASS, 0);
+		}
+		else
+			gpio_set_level ( OUTPUT_BYPASS, 0);
 	}
 }
 

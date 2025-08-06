@@ -1,7 +1,10 @@
 /* 2300 rpm = max 600 hz*/
 
+
+
 #include "motorControlTask.h"
 #include "measureRPMtask.h"
+#include "temperatureSensorTask.h"
 #include "pid.h"
 #include "settings.h"
 
@@ -255,6 +258,21 @@ void motorControlTask(void *pvParameters) {
 		}
 	} while (1);
 }
+// CGI 
+
+const CGIdesc_t motorInfoDescriptorTable[] = {
+	{"Afvoermotor toerental(RPM)", &motor[ AFAN].actualRPM , INT, 1 },
+	{"Afvoermotor minPWM (%%)", &userSettings.motorSettings[AFAN].minPWM , INT, 1},
+	{"Afvoermotor maxPWM (%%)", &userSettings.motorSettings[AFAN].maxPWM, INT, 1 },
+	{"Toevoermotor toerental(RPM)", &motor[ TFAN].actualRPM, INT, 1},
+	{"Toevoermotor minPWM (%%)", &userSettings.motorSettings[TFAN].minPWM, INT, 1 },
+	{"Toevoermotor maxPWM (%%)", &userSettings.motorSettings[TFAN].maxPWM, INT, 1 },
+	{"Binnentemperatuur (°C)" , &binnenTemperatuur, FLT, 1},
+	{"Buitentemperatuur (°C)" , &buitenTemperatuur, FLT,1},
+	{NULL, NULL, FLT,1},
+};
+
+
 
 // extern "C" void app_main(void) {
 // 	int state = 0;

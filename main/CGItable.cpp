@@ -7,6 +7,7 @@
 
 #include "cgiScripts.h"
 #include "sensorTask.h"
+#include "CGIcommonScripts.h"
 #include "CGItable.h"
 #include "log.h"
 
@@ -15,7 +16,8 @@
 const tCGI CGIurls[] = {
 	{"/cgi-bin/getLogMeasValues", (tCGIHandler_t) readCGIvalues, (CGIresponseFileHandler_t) getAllLogsScript},
 	{"/cgi-bin/getRTMeasValues", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getRTMeasValuesScript},
-	{"/cgi-bin/getSensorStatus", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getSensorStatusScript},
+	{"/cgi-bin/getSensorInfo", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getSensorInfoScript},
+	{"/cgi-bin/getSettings", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getSettingsScript},
 	{"/cgi-bin/clearLog", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)clearLogScript},
 	{NULL, NULL, NULL} // last
 };
