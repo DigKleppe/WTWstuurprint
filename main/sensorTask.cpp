@@ -223,6 +223,8 @@ int printLog(log_t *logToPrint, char *pBuffer, int idx) {
 	len += sprintf(pBuffer + len, "%3.0f,", logToPrint->co2[idx]);
 	len += sprintf(pBuffer + len, "%3.2f,", logToPrint->temperature[idx]);
 	len += sprintf(pBuffer + len, "%3.2f\n", logToPrint->hum[idx]);
+	len += sprintf(pBuffer + len, "CO2,%d,", logToPrint->maxCO2);
+	len += sprintf(pBuffer + len, "RPM,%d", logToPrint->RPM);
 	return len;
 }
 
@@ -233,11 +235,14 @@ int printLog(log_t *logToPrint, char *pBuffer) {
 		len += sprintf(pBuffer + len, "%ld,", logToPrint->timeStamp);
 		len += sprintf(pBuffer + len, "%3.0f,", logToPrint->co2[idx]);
 		len += sprintf(pBuffer + len, "%3.2f,", logToPrint->temperature[idx]);
-		len += sprintf(pBuffer + len, "%3.2f ", logToPrint->hum[idx]);
+		len += sprintf(pBuffer + len, "%3.2f,", logToPrint->hum[idx]);
 	}
+	len += sprintf(pBuffer + len, "CO2,%d,", logToPrint->maxCO2);
+	len += sprintf(pBuffer + len, "RPM,%d", logToPrint->RPM);
 	len += sprintf(pBuffer + len, "\n");
 	return len;
 }
+
 int getRTMeasValuesScript(char *pBuffer, int count) {
 	int len = 0;
 	switch (scriptState) {

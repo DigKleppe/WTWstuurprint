@@ -1,5 +1,5 @@
-//var SIMULATE = true;
-var SIMULATE = false;
+var SIMULATE = true;
+//var SIMULATE = false;
 var data2 = 0;
 var simValue1 = 0;
 var simValue2 = 0;

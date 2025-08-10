@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <title>WTW</title>
+        <link rel="stylesheet" type="text/css" href="styles.css">
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script src="js/mainPage.js" type="text/javascript" charset="utf-8"></script>
+        <script src="js/common.js" type="text/javascript" charset="utf-8"></script>
+        <script type="text/javascript">
+		google.charts.load('current', {
+			'packages': ['corechart']
+		});
+		google.charts.setOnLoadCallback(initChart);
+        </script>
+    </head>
+    <body>
+        <div id="CO2RPMchart" style="width: 100%; height: 800px"></div>
+        <a href="sensorInfo.html">Sensor info</a>
+        <a href="settings.html">Instellingen</a>
+    </body>
+</html>
