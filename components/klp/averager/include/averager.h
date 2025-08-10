@@ -19,7 +19,7 @@ public:
   int32_t getHighest();
   int32_t getLowest();
   float average();
-  void *setAverages(uint32_t);
+  int32_t * setAverages(uint32_t);
   void clear();
 
 

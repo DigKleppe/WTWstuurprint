@@ -12,3 +12,4 @@ set(COMPONENT_ADD_INCLUDEDIRS "include")
 register_component()
 #spiffs_create_partition_image(storage ../spiffs_image FLASH_IN_PROJECT)
 #target_link_libraries(${COMPONENT_TARGET} "-u ld_include_highint_hdl_my")
+

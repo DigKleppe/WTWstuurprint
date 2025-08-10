@@ -12,14 +12,14 @@
 #include <time.h>
 
 
-#define MAXLOGVALUES (24 * 60)
-
-
+#define MAXLOGVALUES (24 * 60 / 5) // 24 hours, 5 minutes interval`
 typedef struct {
 	unsigned long timeStamp;
 	float co2[5];
 	float temperature[5];
 	float hum[5];
+	int maxCO2;
+	int RPM;
 } log_t;
 
 log_t * initLogBuffer ( void); // in psRAM

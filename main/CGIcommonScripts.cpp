@@ -4,6 +4,8 @@
 #include "sensorTask.h"
 #include "settings.h"
 #include "wifiConnect.h"
+#include "softwareVersions.h"
+
 #include <string.h>
 
 #include "esp_log.h"
@@ -11,6 +13,9 @@ const char *TAG = "commonscripts";
 
 #include "esp_log.h"
 extern int scriptState;
+static int rssi;
+
+const char firmWareVersion[] = FIRMWARE_VERSION;
 
 const CGIdesc_t writeVarDescriptorTable[] = {
 	{"Badkamerventilatie nalooptijd (min)", &userSettings.bathRoomFanTime, INT, 1},
@@ -29,8 +34,12 @@ const CGIdesc_t writeVarDescriptorTable[] = {
 	{NULL, NULL, INT, 1},
 };
 
-
-
+const CGIdesc_t commonInfoTable[] = {
+	{ "firmwareversie", (void *) firmWareVersion, STR, 1},
+	{ "SPIFFS versieVersion", wifiSettings.SPIFFSversion, STR, 1},
+	{ "RSSI", (void*) &rssi, INT, 1},
+	{NULL, NULL, INT , 1}
+};
 
 
 int getCGItable (const CGIdesc_t *descr, char *pBuffer, int count) {
@@ -44,6 +53,10 @@ int getCGItable (const CGIdesc_t *descr, char *pBuffer, int count) {
 		case FLT:
 			len += sprintf(pBuffer + len, "%1.2f\n,", *(float *)descr->pValue);
 			break;
+		case STR:
+			len += sprintf(pBuffer + len, "%s\n", (char *) descr->pValue);
+			break;
+
 		default:
 			break;
 		}
@@ -66,6 +79,24 @@ int getSettingsScript(char *pBuffer, int count) {
 	}
 	return 0;
 }
+
+int getCommonInfoScript(char *pBuffer, int count) {
+	int len = 0;
+	switch (scriptState) {
+	case 0:
+		scriptState++;
+		len = sprintf(pBuffer, "Parameter, Waarde\n");
+		rssi = getRssi();
+		len += getCGItable( commonInfoTable, pBuffer+len, count);
+		return len;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+
 
 int saveSettingsScript(char *pBuffer, int count) {
 	saveSettings();

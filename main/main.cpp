@@ -21,12 +21,7 @@ esp_err_t init_spiffs(void);
 
 static const char *TAG = "main";
 
-const char firmWareVersion[] = {"0.0"};
-
-const char *getFirmWareVersion() { return firmWareVersion; }
-
 uint32_t timeStamp = 1; // global timestamp for logging
-
 
 myKey_t getKeyPins(void) { 
    uint32_t port =  REG_READ(GPIO_IN_REG);
@@ -52,6 +47,7 @@ void initKeyPins (void) {
 }
 
 int cancelSettingsScript(char *pBuffer, int count); // dummy 
+
 
 extern "C" void app_main() {
 	time_t now = 0;
@@ -79,8 +75,9 @@ extern "C" void app_main() {
 	wifiConnect();
 	cancelSettingsScript(NULL, 0);
 
+
 	xTaskCreate(sensorTask, "sensorTask", configMINIMAL_STACK_SIZE * 5, NULL, 1, NULL);
-	xTaskCreate(temperatureSensorTask, "temperauurSesorTask", configMINIMAL_STACK_SIZE , NULL, 1, NULL);
+	xTaskCreate(temperatureSensorTask, "temperauurSensorTask", configMINIMAL_STACK_SIZE * 2 , NULL, 1, NULL);
 	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, NULL);
  	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, NULL);
 	xTaskCreate(brinkTask, "brinkTask", configMINIMAL_STACK_SIZE * 3, NULL, 1, NULL);

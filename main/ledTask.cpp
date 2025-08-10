@@ -65,12 +65,12 @@ void LED1task(void *pvParameters) {
 	while (1) {
 		switch ((int)connectStatus) {
 		case CONNECTING:
-			ESP_LOGI(TAG, "CONNECTING");
+		//	ESP_LOGI(TAG, "CONNECTING");
 			c = COLOR_RED;
 			break;
 
 		case WPS_ACTIVE:
-			ESP_LOGI(TAG, "WPS_ACTIVE");
+		//	ESP_LOGI(TAG, "WPS_ACTIVE");
 			flash = true;
 			c = COLOR_BLUE; 
 			break;
@@ -82,7 +82,7 @@ void LED1task(void *pvParameters) {
 			break;
 
 		case CONNECTED:
-			ESP_LOGI(TAG, "CONNECTED");
+		//	ESP_LOGI(TAG, "CONNECTED");
 			c = COLOR_YELLOW; // geel
 			break;
 
@@ -91,13 +91,19 @@ void LED1task(void *pvParameters) {
 			break;
 		}
 
+		D1color = (LEDcolor_t) c;  // mirror on board LED to  LED1 
 		led_strip_fill(&strip, 0, strip.length, colorsOnboardLed[c]);
+
+		
 		led_strip_flush(&strip);
 
 		if (flash) {
+			D1color = COLOR_OFF;  // mirror on board LED to  LED1 
 			vTaskDelay(pdMS_TO_TICKS(300));
 			led_strip_fill(&strip, 0, strip.length, colorsOnboardLed[COLOR_OFF]);
 			led_strip_flush(&strip);
+			D1color = (LEDcolor_t) c;
+			
 			vTaskDelay(pdMS_TO_TICKS(300));
 		} else
 			vTaskDelay(pdMS_TO_TICKS(1000));
@@ -135,7 +141,7 @@ void LED2task(void *pvParameters) {
 		// 	led_strip_flush(&strip);
 		// 	vTaskDelay(pdMS_TO_TICKS(300));
 		// } else
-		vTaskDelay(pdMS_TO_TICKS(500));
+		vTaskDelay(pdMS_TO_TICKS(100));
 	}
 }
 

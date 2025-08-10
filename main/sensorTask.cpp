@@ -10,6 +10,8 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
+#include "CGIcommonScripts.h"
+#include "averager.h"
 #include "cgiScripts.h"
 #include "esp_log.h"
 #include "freertos/task.h"
@@ -18,7 +20,7 @@
 #include "settings.h"
 #include "udpServer.h"
 #include "wifiConnect.h"
-#include "CGIcommonScripts.h"
+#include "measureRPMtask.h"
 
 #include <cstring>
 #include <math.h>
@@ -28,13 +30,18 @@ static const char *TAG = "sensorTask";
 #define SENSORMSSG_TIMEOUT 1000 // wait 1 sec
 #define UDPSENSORPORT 5050
 #define MAXLEN 128
+#define SENSOR_TIMEOUT 60 // 60 seconds timeout for sensors
+#define LOGINTERVAL 5	  // minutes
+#define AVERAGES 10		  // number of values to average
 
 const char *getFirmWareVersion();
 extern int scriptState;
 log_t lastVal;
 
 sensorInfo_t sensorInfo[NR_SENSORS];
-
+Averager Co2Averager[NR_SENSORS];
+Averager tempAverager[NR_SENSORS];
+Averager RHaverager[NR_SENSORS];
 typedef struct {
 	float co2;
 	float temperature;
@@ -88,10 +95,18 @@ void sensorTask(void *pvParameters) {
 	udpMssg_t udpMssg;
 	sensorMssg_t sensorMssg;
 	int sensorNr;
+	int logPrescaler = 1;
 	log_t tempLog;
 	int lastminute = -1;
 	time_t now = 0;
 	struct tm timeinfo;
+
+	for (int n = 0; n < NR_SENSORS; n++) {
+		Co2Averager[n].setAverages(AVERAGES);
+		tempAverager[n].setAverages(AVERAGES);
+		RHaverager[n].setAverages(AVERAGES);
+	}
+
 	// if (initLogBuffer() == NULL) {
 	// 	ESP_LOGE(TAG, "Init logBuffer failed");
 	// 	vTaskDelete(NULL);
@@ -125,9 +140,14 @@ void sensorTask(void *pvParameters) {
 						sensorInfo[sensorNr].messageCntr++;
 						sensorInfo[sensorNr].status = SENSORSTATUS_OK;
 						sensorInfo[sensorNr].timeoutTmr = 0;
-						sensorInfo[sensorNr].CO2val = (int) sensorMssg.co2;
-						sensorInfo[sensorNr].RH = (int) sensorMssg.hum;
-						sensorInfo[sensorNr].rssi =  sensorMssg.rssi;
+						sensorInfo[sensorNr].CO2val = (int)sensorMssg.co2;
+						sensorInfo[sensorNr].temperature = sensorMssg.temperature;
+						sensorInfo[sensorNr].RH = (int)sensorMssg.hum;
+						sensorInfo[sensorNr].rssi = sensorMssg.rssi;
+						Co2Averager[sensorNr].write((int)sensorMssg.co2 * 1000);
+						tempAverager[sensorNr].write(sensorMssg.temperature * 1000.0);
+						RHaverager[sensorNr].write((int)sensorMssg.hum * 1000);
+
 						tempLog.co2[sensorNr] = sensorMssg.co2;
 						tempLog.temperature[sensorNr] = sensorMssg.temperature;
 						tempLog.hum[sensorNr] = sensorMssg.hum;
@@ -149,35 +169,51 @@ void sensorTask(void *pvParameters) {
 		}
 		if (lastminute != timeinfo.tm_min) {
 			lastminute = timeinfo.tm_min; // every minute
-			addToLog(tempLog);			  // add to cyclic log buffer
-			lastVal = tempLog;
-			lastVal.timeStamp = timeStamp;
-			memset(&tempLog, 0, sizeof(tempLog));
-		}
-		for (int n = 1; n < NR_SENSORS; n++) {					  // timeouts for regular sensors 1 .. 4, sensor 0 is temporary reference and calibrator
-			if (sensorInfo[n].status > SENSORSTATUS_NOTPRESENT) { // once sensor is detected
-				sensorInfo[n].timeoutTmr++;
-				if (sensorInfo[n].timeoutTmr >= (SENSOR_TIMEOUT * 100)) {
-					sensorInfo[n].status = SENSORSTATUS_NOCOMM;
-					sensorInfo[n].timeoutTmr--;
+			tempLog.timeStamp = timeStamp;
+			for (int n = 0; n < NR_SENSORS; n++) {
+				if (sensorInfo[n].status > SENSORSTATUS_NOTPRESENT) { // once sensor is detected
+					sensorInfo[n].timeoutTmr++;
+					if (sensorInfo[n].timeoutTmr >= (SENSOR_TIMEOUT * 100)) {
+						sensorInfo[n].status = SENSORSTATUS_NOCOMM;
+						sensorInfo[n].timeoutTmr--;
+					}
+				}
+				if (sensorInfo[n].status == SENSORSTATUS_OK) {
+					tempLog.co2[n] = Co2Averager[n].average() / 1000.0;
+					tempLog.temperature[n] = tempAverager[n].average() / 1000.0;
+					tempLog.hum[n] = RHaverager[n].average() / 1000.0;
+
+				} else {
+					tempLog.co2[n] = _ERRORVALUE;
+					tempLog.temperature[n] = _ERRORVALUE;
+					tempLog.hum[n] = _ERRORVALUE;
 				}
 			}
+			tempLog.maxCO2 = getMaXCOValue();
+			tempLog.RPM = getRPM(AFAN);
+			lastVal = tempLog;
+			lastVal.timeStamp = timeStamp;
+			if (logPrescaler > 0) {
+				logPrescaler--;
+			} else {
+				logPrescaler = LOGINTERVAL; // reset prescaler
+				addToLog(tempLog);			// add to cyclic log buffer
+			}
+			vTaskDelay(10 / portTICK_PERIOD_MS);
 		}
-		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 }
 
-int getMaXCOValue ( void) {
+int getMaXCOValue(void) {
 	int max = -1;
-	for (int sensorNr = 1; sensorNr < NR_SENSORS; sensorNr++) {	
-		if ( sensorInfo[sensorNr].status == SENSORSTATUS_OK ) {
-			if (sensorInfo[sensorNr].CO2val > max )
+	for (int sensorNr = 1; sensorNr < NR_SENSORS; sensorNr++) {
+		if (sensorInfo[sensorNr].status == SENSORSTATUS_OK) {
+			if (sensorInfo[sensorNr].CO2val > max)
 				max = sensorInfo[sensorNr].CO2val;
 		}
 	}
 	return max;
 }
-
 
 // CGI stuff
 
@@ -216,48 +252,36 @@ int getRTMeasValuesScript(char *pBuffer, int count) {
 	return 0;
 }
 
-const CGIdesc_t sensorInfoDescriptorTable[][6] ={ 
-{
-	{"RefSensor CO2 (ppm)", &sensorInfo[1].CO2val, INT, 1},
-	{"RefSensor temperatuur (°C)", &sensorInfo[1].temperature, FLT, 1},
-	{"RefSensor RH (%%)", &sensorInfo[1].RH, INT, 1},
-	{"RefSensor RSSI", &sensorInfo[1].rssi, INT, 1},
-	{"RefSensor berichten", &sensorInfo[1].messageCntr, INT, 1},
-	{NULL, NULL, INT, 1}
-} ,
-{
-	{"Sensor 1 CO2 (ppm)", &sensorInfo[1].CO2val, INT, 1},
-	{"Sensor 1 temperatuur (°C)", &sensorInfo[1].temperature, FLT, 1},
-	{"Sensor 1 RH (%%)", &sensorInfo[1].RH, INT, 1},
-	{"Sensor 1 RSSI", &sensorInfo[1].rssi, INT, 1},
-	{"Sensor 1 berichten", &sensorInfo[1].messageCntr, INT, 1},
-	{NULL, NULL, INT, 1}
-} ,
-{
-	{"Sensor 2 CO2 (ppm)", &sensorInfo[2].CO2val, INT, 1},
-	{"Sensor 2 temperatuur (°C)", &sensorInfo[2].temperature, FLT, 1},
-	{"Sensor 2 RH (%%)", &sensorInfo[2].RH, INT, 1},
-	{"Sensor 2 RSSI", &sensorInfo[2].rssi, INT, 1},
-	{"Sensor 2 berichten", &sensorInfo[2].messageCntr, INT, 1},
-	{NULL, NULL, INT, 1}
-},
-{
-	{"Sensor 3 CO2 (ppm)", &sensorInfo[3].CO2val, INT, 1},
-	{"Sensor 3 temperatuur (°C)", &sensorInfo[3].temperature, FLT, 1},
-	{"Sensor 3 RH (%%)", &sensorInfo[3].RH, INT, 1},
-	{"Sensor 3 RSSI", &sensorInfo[3].rssi, INT, 1},
-	{"Sensor 3 berichten", &sensorInfo[3].messageCntr, INT, 1},
-	{NULL, NULL, INT, 1}
-},
-{
-	{"Sensor 4 CO2 (ppm)", &sensorInfo[4].CO2val, INT, 1},
-	{"Sensor 4 temperatuur (°C)", &sensorInfo[4].temperature, FLT, 1},
-	{"Sensor 4 RH (%%)", &sensorInfo[4].RH, INT, 1},
-	{"Sensor 4 RSSI", &sensorInfo[4].rssi, INT, 1},
-	{"Sensor 4 berichten", &sensorInfo[4].messageCntr, INT, 1},
-	{NULL, NULL, INT, 1}
-}
-};
+const CGIdesc_t sensorInfoDescriptorTable[][6] = {{{"RefSensor CO2 (ppm)", &sensorInfo[1].CO2val, INT, 1},
+												   {"RefSensor temperatuur (°C)", &sensorInfo[1].temperature, FLT, 1},
+												   {"RefSensor RH (%%)", &sensorInfo[1].RH, INT, 1},
+												   {"RefSensor RSSI", &sensorInfo[1].rssi, INT, 1},
+												   {"RefSensor berichten", &sensorInfo[1].messageCntr, INT, 1},
+												   {NULL, NULL, INT, 1}},
+												  {{"Sensor 1 CO2 (ppm)", &sensorInfo[1].CO2val, INT, 1},
+												   {"Sensor 1 temperatuur (°C)", &sensorInfo[1].temperature, FLT, 1},
+												   {"Sensor 1 RH (%%)", &sensorInfo[1].RH, INT, 1},
+												   {"Sensor 1 RSSI", &sensorInfo[1].rssi, INT, 1},
+												   {"Sensor 1 berichten", &sensorInfo[1].messageCntr, INT, 1},
+												   {NULL, NULL, INT, 1}},
+												  {{"Sensor 2 CO2 (ppm)", &sensorInfo[2].CO2val, INT, 1},
+												   {"Sensor 2 temperatuur (°C)", &sensorInfo[2].temperature, FLT, 1},
+												   {"Sensor 2 RH (%%)", &sensorInfo[2].RH, INT, 1},
+												   {"Sensor 2 RSSI", &sensorInfo[2].rssi, INT, 1},
+												   {"Sensor 2 berichten", &sensorInfo[2].messageCntr, INT, 1},
+												   {NULL, NULL, INT, 1}},
+												  {{"Sensor 3 CO2 (ppm)", &sensorInfo[3].CO2val, INT, 1},
+												   {"Sensor 3 temperatuur (°C)", &sensorInfo[3].temperature, FLT, 1},
+												   {"Sensor 3 RH (%%)", &sensorInfo[3].RH, INT, 1},
+												   {"Sensor 3 RSSI", &sensorInfo[3].rssi, INT, 1},
+												   {"Sensor 3 berichten", &sensorInfo[3].messageCntr, INT, 1},
+												   {NULL, NULL, INT, 1}},
+												  {{"Sensor 4 CO2 (ppm)", &sensorInfo[4].CO2val, INT, 1},
+												   {"Sensor 4 temperatuur (°C)", &sensorInfo[4].temperature, FLT, 1},
+												   {"Sensor 4 RH (%%)", &sensorInfo[4].RH, INT, 1},
+												   {"Sensor 4 RSSI", &sensorInfo[4].rssi, INT, 1},
+												   {"Sensor 4 berichten", &sensorInfo[4].messageCntr, INT, 1},
+												   {NULL, NULL, INT, 1}}};
 
 int getSensorInfoScript(char *pBuffer, int count) {
 	int len = 0;
@@ -266,13 +290,13 @@ int getSensorInfoScript(char *pBuffer, int count) {
 	case 0:
 		scriptState++;
 		len = sprintf(pBuffer, "Parameter, Waarde,Stel in\n");
-		for ( int n = 0; n < NR_SENSORS; n++) {
-			if (sensorInfo[n].status != SENSORSTATUS_NOTPRESENT ) {
-				len += getCGItable (sensorInfoDescriptorTable[n], pBuffer+len, count);
+		for (int n = 0; n < NR_SENSORS; n++) {
+			if (sensorInfo[n].status != SENSORSTATUS_NOTPRESENT) {
+				len += getCGItable(sensorInfoDescriptorTable[n], pBuffer + len, count);
 				sensorFound = true;
 			}
-		}	
-		if ( !sensorFound) {
+		}
+		if (!sensorFound) {
 			len += sprintf(pBuffer + len, "Fout, Geen sensoren gevonden\n");
 		}
 		return len;
@@ -298,4 +322,3 @@ int getInfoValuesScript(char *pBuffer, int count) {
 	}
 	return 0;
 }
-

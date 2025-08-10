@@ -23,8 +23,7 @@ void Averager::clear() {
 	bufValues = 0;
 }
 
-void*
-Averager::setAverages(uint32_t averages) {
+int32_t * Averager::setAverages(uint32_t averages) {
 	if (averages > 0) {
 		bufSize = averages;
 		bufWriteIndex = 0;

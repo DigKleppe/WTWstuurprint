@@ -106,6 +106,8 @@ void setRPM(motorID_t id, float rpm) {
 		rpm = MINRPM;
 	motor[id].pid.setDesiredValue(rpm);
 }
+
+
 void setRPMpercent(motorID_t id, int percent) {
 	if ( percent > 100 )
 		percent = 100;
