@@ -7,6 +7,6 @@
 int getSettingsScript(char *pBuffer, int count);
 int getCGItable (const CGIdesc_t *descr, char *pBuffer, int count);
 int getCommonInfoScript (char *pBuffer, int count);
-
+int getFanInfoScript(char *pBuffer, int count);
 
 #endif

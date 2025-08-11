@@ -19,6 +19,7 @@ const tCGI CGIurls[] = {
 	{"/cgi-bin/getSensorInfo", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getSensorInfoScript},
 	{"/cgi-bin/getCommonInfo", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getCommonInfoScript},
 	{"/cgi-bin/getSettings", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getSettingsScript},
+	{"/cgi-bin/getFanInfo", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getFanInfoScript},
 	{"/cgi-bin/clearLog", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)clearLogScript},
 	{NULL, NULL, NULL} // last
 };

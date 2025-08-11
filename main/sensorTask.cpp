@@ -144,6 +144,7 @@ void sensorTask(void *pvParameters) {
 						sensorInfo[sensorNr].temperature = sensorMssg.temperature;
 						sensorInfo[sensorNr].RH = (int)sensorMssg.hum;
 						sensorInfo[sensorNr].rssi = sensorMssg.rssi;
+						sensorInfo[sensorNr].ipAddress = udpMssg.ipAddress;
 						Co2Averager[sensorNr].write((int)sensorMssg.co2 * 1000);
 						tempAverager[sensorNr].write(sensorMssg.temperature * 1000.0);
 						RHaverager[sensorNr].write((int)sensorMssg.hum * 1000);
@@ -199,8 +200,8 @@ void sensorTask(void *pvParameters) {
 				logPrescaler = LOGINTERVAL; // reset prescaler
 				addToLog(tempLog);			// add to cyclic log buffer
 			}
-			vTaskDelay(10 / portTICK_PERIOD_MS);
 		}
+		vTaskDelay( 10/portTICK_PERIOD_MS);
 	}
 }
 
@@ -257,35 +258,40 @@ int getRTMeasValuesScript(char *pBuffer, int count) {
 	return 0;
 }
 
-const CGIdesc_t sensorInfoDescriptorTable[][6] = {{{"RefSensor CO2 (ppm)", &sensorInfo[1].CO2val, INT, 1},
-												   {"RefSensor temperatuur (°C)", &sensorInfo[1].temperature, FLT, 1},
-												   {"RefSensor RH (%%)", &sensorInfo[1].RH, INT, 1},
-												   {"RefSensor RSSI", &sensorInfo[1].rssi, INT, 1},
-												   {"RefSensor berichten", &sensorInfo[1].messageCntr, INT, 1},
+const CGIdesc_t sensorInfoDescriptorTable[][7] = {{{"RefSensor CO2 (ppm)", &sensorInfo[0].CO2val, INT, 1},
+												   {"RefSensor temperatuur (°C)", &sensorInfo[0].temperature, FLT, 1},
+												   {"RefSensor RH (%)", &sensorInfo[0].RH, INT, 1},
+												   {"RefSensor RSSI", &sensorInfo[0].rssi, INT, 1},
+												   {"RefSensor berichten", &sensorInfo[0].messageCntr, INT, 1},
+												   {"RefSensor IPadres", &sensorInfo[0].ipAddress, IPADDR, 1},
 												   {NULL, NULL, INT, 1}},
 												  {{"Sensor 1 CO2 (ppm)", &sensorInfo[1].CO2val, INT, 1},
 												   {"Sensor 1 temperatuur (°C)", &sensorInfo[1].temperature, FLT, 1},
-												   {"Sensor 1 RH (%%)", &sensorInfo[1].RH, INT, 1},
+												   {"Sensor 1 RH (%)", &sensorInfo[1].RH, INT, 1},
 												   {"Sensor 1 RSSI", &sensorInfo[1].rssi, INT, 1},
 												   {"Sensor 1 berichten", &sensorInfo[1].messageCntr, INT, 1},
+												   {"Sensor 1 IPadres", &sensorInfo[1].ipAddress, IPADDR, 1},
 												   {NULL, NULL, INT, 1}},
 												  {{"Sensor 2 CO2 (ppm)", &sensorInfo[2].CO2val, INT, 1},
 												   {"Sensor 2 temperatuur (°C)", &sensorInfo[2].temperature, FLT, 1},
-												   {"Sensor 2 RH (%%)", &sensorInfo[2].RH, INT, 1},
+												   {"Sensor 2 RH (%)", &sensorInfo[2].RH, INT, 1},
 												   {"Sensor 2 RSSI", &sensorInfo[2].rssi, INT, 1},
 												   {"Sensor 2 berichten", &sensorInfo[2].messageCntr, INT, 1},
+												   {"Sensor 2 IPadres", &sensorInfo[2].ipAddress, IPADDR, 1},
 												   {NULL, NULL, INT, 1}},
 												  {{"Sensor 3 CO2 (ppm)", &sensorInfo[3].CO2val, INT, 1},
 												   {"Sensor 3 temperatuur (°C)", &sensorInfo[3].temperature, FLT, 1},
-												   {"Sensor 3 RH (%%)", &sensorInfo[3].RH, INT, 1},
+												   {"Sensor 3 RH (%)", &sensorInfo[3].RH, INT, 1},
 												   {"Sensor 3 RSSI", &sensorInfo[3].rssi, INT, 1},
 												   {"Sensor 3 berichten", &sensorInfo[3].messageCntr, INT, 1},
+												   {"Sensor 3 IPadres", &sensorInfo[3].ipAddress, IPADDR, 1},
 												   {NULL, NULL, INT, 1}},
 												  {{"Sensor 4 CO2 (ppm)", &sensorInfo[4].CO2val, INT, 1},
 												   {"Sensor 4 temperatuur (°C)", &sensorInfo[4].temperature, FLT, 1},
-												   {"Sensor 4 RH (%%)", &sensorInfo[4].RH, INT, 1},
+												   {"Sensor 4 RH (%)", &sensorInfo[4].RH, INT, 1},
 												   {"Sensor 4 RSSI", &sensorInfo[4].rssi, INT, 1},
 												   {"Sensor 4 berichten", &sensorInfo[4].messageCntr, INT, 1},
+												   {"Sensor 4 IPadres", &sensorInfo[4].ipAddress, IPADDR, 1},
 												   {NULL, NULL, INT, 1}}};
 
 int getSensorInfoScript(char *pBuffer, int count) {
@@ -294,7 +300,7 @@ int getSensorInfoScript(char *pBuffer, int count) {
 	switch (scriptState) {
 	case 0:
 		scriptState++;
-		len = sprintf(pBuffer, "Parameter, Waarde,Stel in\n");
+		len = sprintf(pBuffer, "Parameter, Waarde\n");
 		for (int n = 0; n < NR_SENSORS; n++) {
 			if (sensorInfo[n].status != SENSORSTATUS_NOTPRESENT) {
 				len += getCGItable(sensorInfoDescriptorTable[n], pBuffer + len, count);

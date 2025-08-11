@@ -22,6 +22,7 @@ typedef struct {
     float temperature;
     int RH;
     int rssi;
+    uint32_t ipAddress;
     uint32_t messageCntr;
 } sensorInfo_t;
 

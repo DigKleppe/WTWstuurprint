@@ -71,6 +71,7 @@ void udpServerTask(void *pvParameters) {
 				}
 				udpMssg.len = n;
 				udpMssg.mssg = buffer;
+				udpMssg.ipAddress = cliaddr.sin_addr.s_addr;
 				xQueueSendToBack(udpMssgBox, &udpMssg, 0);
 				closesocket(sockfd);
 			}

@@ -6,6 +6,8 @@
 #include "wifiConnect.h"
 #include "softwareVersions.h"
 
+#include "esp_netif_ip_addr.h"	
+
 #include <string.h>
 
 #include "esp_log.h"
@@ -19,12 +21,12 @@ const char firmWareVersion[] = FIRMWARE_VERSION;
 
 const CGIdesc_t writeVarDescriptorTable[] = {
 	{"Badkamerventilatie nalooptijd (min)", &userSettings.bathRoomFanTime, INT, 1},
-	{"Badkamerventilatie max nalooptijd (min) ", &userSettings.bathRoomFanMaxTime, INT, 1},
-	{"Minimum toerental (%%)", &userSettings.motorSpeedMin, INT, 1},
-	{"Maximum toerental (%%)", &userSettings.motorSpeedMax, INT, 1},
-	{"Toerental zonder sensoren (%%)", &userSettings.fixedSpeed[0], INT, 1},
-	{"Toerental stand 2 schakelaars (%%) ", &userSettings.fixedSpeed[1], INT, 1},
-	{"Toerental stand 3 schakelaars {%%)", &userSettings.fixedSpeed[2], INT, 1},
+	{"Badkamerventilatie maximumtijd (min)", &userSettings.bathRoomFanMaxTime, INT, 1},
+	{"Minimum toerental (%)", &userSettings.motorSpeedMin, INT, 1},
+	{"Maximum toerental (%)", &userSettings.motorSpeedMax, INT, 1},
+	{"Toerental zonder sensoren (%)", &userSettings.fixedSpeed[0], INT, 1},
+	{"Toerental stand 2 schakelaars (%) ", &userSettings.fixedSpeed[1], INT, 1},
+	{"Toerental stand 3 schakelaars (%)", &userSettings.fixedSpeed[2], INT, 1},
 	{"CO2 grenswaarde (ppm)", &userSettings.CO2setpoint, INT, 1},
 	{"PID P waarde", &userSettings.PIDp, FLT, 1},
 	{"PID I waarde", &userSettings.PIDi, FLT, 1},
@@ -36,11 +38,10 @@ const CGIdesc_t writeVarDescriptorTable[] = {
 
 const CGIdesc_t commonInfoTable[] = {
 	{ "firmwareversie", (void *) firmWareVersion, STR, 1},
-	{ "SPIFFS versieVersion", wifiSettings.SPIFFSversion, STR, 1},
+	{ "SPIFFS versie", wifiSettings.SPIFFSversion, STR, 1},
 	{ "RSSI", (void*) &rssi, INT, 1},
 	{NULL, NULL, INT , 1}
 };
-
 
 int getCGItable (const CGIdesc_t *descr, char *pBuffer, int count) {
 	int len = 0;
@@ -51,10 +52,17 @@ int getCGItable (const CGIdesc_t *descr, char *pBuffer, int count) {
 			len += sprintf(pBuffer + len, "%d\n", *(int *)descr->pValue);
 			break;
 		case FLT:
-			len += sprintf(pBuffer + len, "%1.2f\n,", *(float *)descr->pValue);
+			len += sprintf(pBuffer + len, "%1.2f\n", *(float *)descr->pValue);
 			break;
 		case STR:
 			len += sprintf(pBuffer + len, "%s\n", (char *) descr->pValue);
+			break;
+
+		case IPADDR: {
+			esp_ip4_addr_t addr = (esp_ip4_addr_t) *(uint32_t*) descr->pValue;
+			len += sprintf(pBuffer + len, IPSTR, IP2STR(&addr) );
+			len += sprintf(pBuffer + len, "\n");
+			}
 			break;
 
 		default:
@@ -95,6 +103,24 @@ int getCommonInfoScript(char *pBuffer, int count) {
 	}
 	return 0;
 }
+
+int getFanInfoScript(char *pBuffer, int count) {
+	int len = 0;
+	switch (scriptState) {
+	case 0:
+		scriptState++;
+		len = sprintf(pBuffer, "Parameter, Waarde\n");
+		len += getCGItable( motorInfoDescriptorTable, pBuffer+len, count);
+		return len;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+
+
 
 
 

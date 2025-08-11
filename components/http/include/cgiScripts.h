@@ -21,7 +21,7 @@ void CGI_init( void );
 
 extern const tCGI *g_pCGIs;
 //extern int g_iNumCGIs;
-typedef enum { FLT, STR, INT , DESCR , CALVAL} varType_t;
+typedef enum { FLT, STR, INT , DESCR , IPADDR} varType_t;
 
 typedef struct {
 	const char *name;

@@ -135,12 +135,8 @@ int readActionScript(char *pcParam, const CGIdesc_t *CGIdescTable, int size) {
 								*pDest = 0;
 								break;
 
-							case CALVAL:
-//								if (sscanf(&p[n + 1], "%lf", (double*) actionDescriptors[m].pValue) ==1) // read value
-//									newCalValueReceived = true;
-								break;
-
 							case DESCR:
+							case IPADDR:
 								break;
 							}
 						}
@@ -263,7 +259,7 @@ int readVarScript(char *pBuffer, int count) {
 						pValue += MAX_STRLEN + 1;
 						break;
 					case DESCR:
-					case CALVAL:
+					case IPADDR:
 						break;
 
 					}
@@ -288,7 +284,7 @@ int readVarScript(char *pBuffer, int count) {
 					pValue += MAX_STRLEN + 1;
 					break;
 				case DESCR:
-				case CALVAL:
+				case IPADDR:
 					break;
 				}
 				pntr += cnt;

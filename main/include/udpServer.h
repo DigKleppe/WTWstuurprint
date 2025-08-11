@@ -12,6 +12,7 @@ typedef struct {
     int port;
     char *mssg;
     size_t len;
+    uint32_t ipAddress;
 } udpMssg_t;
 
 
