@@ -7,6 +7,7 @@
 
 #include "cgiScripts.h"
 #include "sensorTask.h"
+#include "motorControlTask.h"
 #include "CGIcommonScripts.h"
 #include "CGItable.h"
 #include "log.h"
@@ -20,6 +21,7 @@ const tCGI CGIurls[] = {
 	{"/cgi-bin/getCommonInfo", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getCommonInfoScript},
 	{"/cgi-bin/getSettings", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getSettingsScript},
 	{"/cgi-bin/getFanInfo", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getFanInfoScript},
+	{"/cgi-bin/resetFanLimits", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)resetFanLimitsScript},
 	{"/cgi-bin/clearLog", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)clearLogScript},
 	{NULL, NULL, NULL} // last
 };

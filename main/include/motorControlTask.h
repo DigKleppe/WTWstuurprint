@@ -25,6 +25,7 @@ typedef struct {
 extern motorSettings_t motorsettings[2];
 void setRPM(motorID_t id, float rpm);
 
+int resetFanLimitsScript(char *pBuffer, int count) ;
 
 void setRPMpercent(motorID_t id, int percent);
 

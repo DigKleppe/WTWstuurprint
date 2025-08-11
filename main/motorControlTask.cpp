@@ -24,6 +24,8 @@
 esp_err_t init_spiffs(void);
 static const char *TAG = "MCTask";
 
+extern int scriptState;
+
 #define IMAX 10.0
 #define P 0.01
 #define I 0.1
@@ -43,6 +45,8 @@ static const char *TAG = "MCTask";
 
 static motor_t motor[2];
 static bool PWMisInitialized;
+
+static bool forceNewCalibration; 
 
 const int MAXDUTYCYCLE = ((2 << (LEDC_DUTY_RES - 1)) - 1);
 
@@ -249,7 +253,8 @@ void motorControlTask(void *pvParameters) {
 				printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM);
 			}
 			xLastWakeTime = xTaskGetTickCount();
-			while (motor[id].desiredRPM == RPMSetpoint) {
+			while ((motor[id].desiredRPM == RPMSetpoint) && ! forceNewCalibration) {
+				forceNewCalibration = false;
 				xTaskDelayUntil(&xLastWakeTime, PID_INTERVAL / portTICK_PERIOD_MS);
 				control = motor[id].pid.update(getRPM(id)) + setpointPWM;
 				if (control < minPWM)
@@ -264,15 +269,34 @@ void motorControlTask(void *pvParameters) {
 
 const CGIdesc_t motorInfoDescriptorTable[] = {
 	{"Afvoermotor toerental(RPM)", &motor[ AFAN].actualRPM , INT, 1 },
-	{"Afvoermotor minPWM (%%)", &userSettings.motorSettings[AFAN].minPWM , INT, 1},
-	{"Afvoermotor maxPWM (%%)", &userSettings.motorSettings[AFAN].maxPWM, INT, 1 },
+	{"Afvoermotor minPWM (%)", &userSettings.motorSettings[AFAN].minPWM , INT, 1},
+	{"Afvoermotor maxPWM (%)", &userSettings.motorSettings[AFAN].maxPWM, INT, 1 },
 	{"Toevoermotor toerental(RPM)", &motor[ TFAN].actualRPM, INT, 1},
-	{"Toevoermotor minPWM (%%)", &userSettings.motorSettings[TFAN].minPWM, INT, 1 },
-	{"Toevoermotor maxPWM (%%)", &userSettings.motorSettings[TFAN].maxPWM, INT, 1 },
+	{"Toevoermotor minPWM (%)", &userSettings.motorSettings[TFAN].minPWM, INT, 1 },
+	{"Toevoermotor maxPWM (%)", &userSettings.motorSettings[TFAN].maxPWM, INT, 1 },
 	{"Binnentemperatuur (°C)" , &binnenTemperatuur, FLT, 1},
 	{"Buitentemperatuur (°C)" , &buitenTemperatuur, FLT,1},
 	{NULL, NULL, FLT,1},
 };
+
+int resetFanLimitsScript(char *pBuffer, int count)  {
+	int len = 0;
+	switch (scriptState) {
+	case 0:
+		scriptState++;
+		userSettings.motorSettings[TFAN].isCalibrated = false;
+		userSettings.motorSettings[AFAN].isCalibrated = false;
+		forceNewCalibration = true;
+
+		len = sprintf(pBuffer, "OK\n");
+		return len;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
 
 
 

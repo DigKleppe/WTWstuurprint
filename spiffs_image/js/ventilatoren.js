@@ -11,3 +11,8 @@ function timer() {
 	getInfo( "getFanInfo", INFOTABLENAME, firstTime);
 	firstTime = false;
 }
+
+
+function resetFanLimits () {
+	getItem ( "resetFanLimits");
+}
