@@ -30,7 +30,7 @@ const static char *TAG = "tSens";
 //  ADC_CHANNEL_2	// ts buiten
 
 #define NR_ADC_CHANNELS 3
-#define ADC_ATTEN ADC_ATTEN_DB_2_5  //ADC_ATTEN_DB_6
+#define ADC_ATTEN ADC_ATTEN_DB_6
 #define AVERAGES 16
 
 #define RREF 	1200.0 // pullup sensors
@@ -110,7 +110,6 @@ void temperatureSensorTask(void *pvParameter) {
 			int avg = (int)averager[n].average();
 			adc_cali_raw_to_voltage(adcCaliHandle[n], avg, &voltage[n][0]);
 		}
-
 		float mVCC = voltage[TSREF][0] * 3.0; // reference = 1/3 VCC
 		float Rin = voltage[TSIN][0] * RREF / (mVCC - voltage[TSIN][0]);
 		if (( Rin > 600) || ( Rin < 400))
@@ -125,36 +124,8 @@ void temperatureSensorTask(void *pvParameter) {
 		else
 			buitenTemperatuur = 25+ (R25-Rout)/TC;
 
-		printf( "tin: %1.2f tout: %2.2f\n\r" ,binnenTemperatuur, buitenTemperatuur);
-			
+	//	printf( "tin: %1.2f tout: %2.2f\n\r" ,binnenTemperatuur, buitenTemperatuur);
 		vTaskDelay(pdMS_TO_TICKS(2000));
 	}
 }
 
-// 	//ADC1 config
-// 	ESP_ERROR_CHECK (adc1_config_width(ADC_WIDTH_BIT_12));
-// 	ESP_ERROR_CHECK	(adc1_config_channel_atten(ADC1_EXAMPLE_CHAN0,
-// ADC_EXAMPLE_ATTEN));
-
-// 	while(	1) {
-// 	//	adc_raw[0][0] = adc1_get_raw(ADC1_EXAMPLE_CHAN0);
-// 		averager.write (adc1_get_raw(ADC1_EXAMPLE_CHAN0));
-
-// 		// ESP_LOGI(TAG_CH[0][0], "raw  data: %d", adc_raw[0][0]);
-// 		if (cali_enable) {
-// 		//	voltage = esp_adc_cal_raw_to_voltage(adc_raw[0][0],
-// &adc1_chars); 			voltage = esp_adc_cal_raw_to_voltage((int)
-// averager.average(), &adc1_chars);
-
-// 			// ESP_LOGI(TAG_CH[0][0], "cali data: %d mV", voltage);
-// 			float R = ((float) voltage/(VSUPP-voltage)) * RREF;
-// 			printf( "V: %d R: %1.2f\n\r" , (int) voltage, R);
-
-// 		//	NTCtemperature= calcTemp(R);
-// 		//	ESP_LOGI(TAG_CH[0][0], "V: %d mV  R: %4.1f E
-// temperatuur: %2.2f",voltage, R,NTCtemperature);
-// 		}
-// 		vTaskDelay(pdMS_TO_TICKS(1000));
-// 	}
-
-// }

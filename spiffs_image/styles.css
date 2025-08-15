@@ -101,7 +101,7 @@ input[type=radio] {
 
 input[type=number] {
    font-size: 30pt;
-   width: 200pt;
+   width: 150pt;
    border: 2px solid #555;
  }
 
@@ -251,7 +251,8 @@ td {
 .styled-table td {
     padding: 2px 5px;
     text-align:center;
-	margin: 5px 0;
+	  margin: 5px 0;
+    width: 20%;
 }
 
 .styled-table tbody tr {

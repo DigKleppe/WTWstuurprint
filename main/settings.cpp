@@ -21,17 +21,38 @@ bool settingsChanged;
 
 char checkstr[MAX_STRLEN+1];
 
+	// char moduleName[MAX_STRLEN + 1];
+	// int CO2setpoint;
+	// float CO2PIDp;
+	// float CO2PIDi;
+	// int CO2PIDmaxI;
+	// int bathRoomFanTime;
+	// int bathRoomFanMaxTime;
+	// int motorSpeedMin;
+	// int motorSpeedMax;
+	// int fixedSpeed[3];
+	// motorSettings_t motorSettings[2];
+	// float motorPIDp;
+	// float motorPIDi;
+	// int motorPIDmaxI;
+	// int MinBuitenTemperatuurbypass;
+	// int MaxBuitenTemperatuurbypass;
+	// char checkstr[MAX_STRLEN + 1];
+
 userSettings_t userSettingsDefaults = {
 	{ CONFIG_MDNS_HOSTNAME },
 	1100,
+	0.1,
+	0.1,
+	200,
 	30, 
 	40,
 	0,
 	100,
 	{ 5, 50, 100 },
 	{{ 0,0,false}, {0,0,false}},
-	10,
-	10,
+	0.1,
+	0.1,
 	30,
 	10,
 	22,

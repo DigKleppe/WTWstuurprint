@@ -1,6 +1,8 @@
 /* 2300 rpm = max 600 hz*/
 
 
+#define LOG_LOCAL_LEVEL  ESP_LOG_INFO   //ESP_LOG_ERROR
+#include "esp_log.h"
 
 #include "motorControlTask.h"
 #include "measureRPMtask.h"
@@ -13,8 +15,8 @@
 #include "driver/ledc.h"
 #include "driver/pulse_cnt.h"
 #include "esp_err.h"
-#include "esp_log.h"
 #include "nvs_flash.h"
+
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -25,11 +27,6 @@ esp_err_t init_spiffs(void);
 static const char *TAG = "MCTask";
 
 extern int scriptState;
-
-#define IMAX 10.0
-#define P 0.01
-#define I 0.1
-#define D 0
 
 #define PID_INTERVAL 1000 // ms
 
@@ -104,11 +101,16 @@ static void PWMinit(void) {
 }
 
 void setRPM(motorID_t id, float rpm) {
+	static float oldrpm =0;
 	if (rpm > MAXRPM)
 		rpm = MAXRPM;
 	if (rpm < MINRPM)
 		rpm = MINRPM;
-	motor[id].pid.setDesiredValue(rpm);
+	motor[id].desiredRPM = rpm;
+	if ( rpm != oldrpm) {
+		ESP_LOGI(TAG,"RPM set to %f", rpm);
+		oldrpm = rpm;
+	}
 }
 
 
@@ -118,18 +120,18 @@ void setRPMpercent(motorID_t id, int percent) {
 		
 	if (percent > 0)
 		setRPM(id, MINRPM + (float)percent * (MAXRPM - MINRPM) / 100.0);
-	else
-		motor[id].pid.setDesiredValue(0); // off
+	else {
+		motor[id].desiredRPM = 0; // off
+		ESP_LOGI(TAG,"RPM set to 0");
+	}
 }
 
 void motorControlTask(void *pvParameters) {
-	// motorID_t id = (motorID_t) pvParameters;
 	int x = (int)pvParameters;
 	motorID_t id = (motorID_t)x;
 
 	float control;
 	float setpointPWM;
-	//	vTaskDelay(5000 / portTICK_PERIOD_MS);
 	int minPWM = 13;
 	bool found = false;
 	int maxPWM = 65;
@@ -144,8 +146,8 @@ void motorControlTask(void *pvParameters) {
 		xTaskCreate(measureRPMtask, "measureRPM", 8000, NULL, 1, NULL);
 	}
 
-	motor[id].pid.setImaxImin(IMAX, -IMAX);
-	motor[id].pid.setPIDValues(P, I, D);
+	motor[id].pid.setImaxImin(userSettings.motorPIDmaxI,-userSettings.motorPIDmaxI );
+	motor[id].pid.setPIDValues(userSettings.motorPIDp , userSettings.motorPIDi, 0);
 
 	// setPWMpercent(PWMchannelList[id], 15 + (id * 10));
 	// while(1)
@@ -214,10 +216,13 @@ void motorControlTask(void *pvParameters) {
 			userSettings.motorSettings[id].minPWM = minPWM;
 			saveSettings();
 		} // end if !calibrated
+
 		else {
 			maxPWM = userSettings.motorSettings[id].maxPWM;
 			minPWM = userSettings.motorSettings[id].minPWM;
 		}
+
+	// control loop start 
 
 		RPMSetpoint = motor[id].desiredRPM;
 		motor[id].pid.setDesiredValue(RPMSetpoint);
@@ -229,8 +234,9 @@ void motorControlTask(void *pvParameters) {
 			setPWMpercent(PWMchannelList[id], setpointPWM);
 			printf("setpointPWM %d: %f\r\n", (int)id, setpointPWM);
 
-			for (int n = 0; n < 50; n++) {
+			for (int n = 0; n < 20; n++) {
 				lastRPM = getRPM(id);
+				motor[id].actualRPM = lastRPM; // for CGI
 				vTaskDelay(1000 / portTICK_PERIOD_MS);
 				if (lastRPM > 100) {
 					if (abs(getRPM(id) - lastRPM) < 10)
@@ -241,6 +247,7 @@ void motorControlTask(void *pvParameters) {
 					}
 				}
 				printf("stabiliseren %d: %d %d\r\n", (int)id, n + 1, getRPM(id));
+			
 			}
 
 			for (int n = 0; n < 10; n++) {
@@ -251,16 +258,27 @@ void motorControlTask(void *pvParameters) {
 					setpointPWM++;
 				setPWMpercent(PWMchannelList[id], setpointPWM);
 				printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM);
+				motor[id].actualRPM = getRPM(id); // for CGI
 			}
 			xLastWakeTime = xTaskGetTickCount();
-			while ((motor[id].desiredRPM == RPMSetpoint) && ! forceNewCalibration) {
+		//	while ((motor[id].desiredRPM != RPMSetpoint) && ! forceNewCalibration) {
+
+		// control loop running 
+			while ((motor[id].desiredRPM != 0) && ! forceNewCalibration) {
 				forceNewCalibration = false;
 				xTaskDelayUntil(&xLastWakeTime, PID_INTERVAL / portTICK_PERIOD_MS);
+				
+				motor[id].pid.setImaxImin(userSettings.motorPIDmaxI,-userSettings.motorPIDmaxI );  // in case these were changed
+				motor[id].pid.setPIDValues(userSettings.motorPIDp , userSettings.motorPIDi, 0);
+				RPMSetpoint = motor[id].desiredRPM;
+				motor[id].pid.setDesiredValue(RPMSetpoint);
+
 				control = motor[id].pid.update(getRPM(id)) + setpointPWM;
 				if (control < minPWM)
 					control = minPWM;
 				printf("AV%d: %2.2f PID: %1.1f RPM:%d \n", (int)id, control, control - setpointPWM, getRPM(id));
 				setPWMpercent(PWMchannelList[id], control);
+				motor[id].actualRPM =  getRPM(id);
 			}
 		}
 	} while (1);
@@ -268,10 +286,10 @@ void motorControlTask(void *pvParameters) {
 // CGI 
 
 const CGIdesc_t motorInfoDescriptorTable[] = {
-	{"Afvoermotor toerental(RPM)", &motor[ AFAN].actualRPM , INT, 1 },
+	{"Afvoermotor toerental(RPM)", &motor[AFAN].actualRPM , INT, 1 },
 	{"Afvoermotor minPWM (%)", &userSettings.motorSettings[AFAN].minPWM , INT, 1},
 	{"Afvoermotor maxPWM (%)", &userSettings.motorSettings[AFAN].maxPWM, INT, 1 },
-	{"Toevoermotor toerental(RPM)", &motor[ TFAN].actualRPM, INT, 1},
+	{"Toevoermotor toerental(RPM)", &motor[TFAN].actualRPM, INT, 1},
 	{"Toevoermotor minPWM (%)", &userSettings.motorSettings[TFAN].minPWM, INT, 1 },
 	{"Toevoermotor maxPWM (%)", &userSettings.motorSettings[TFAN].maxPWM, INT, 1 },
 	{"Binnentemperatuur (°C)" , &binnenTemperatuur, FLT, 1},

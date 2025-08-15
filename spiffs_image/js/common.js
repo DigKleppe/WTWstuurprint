@@ -99,9 +99,7 @@ function makeSettingsTable(descriptorData, settingsTbl) {
 			cell.appendChild(input);
 			row.appendChild(cell);
 
-			// cell = document.createElement("td");
-			// cell.setAttribute("calItem", i);
-
+			cell = document.createElement("td");
 			var button = document.createElement("button");
 			button.innerHTML = "Stel in";
 			button.className = "button-3";

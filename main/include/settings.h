@@ -22,15 +22,18 @@
 typedef struct {
 	char moduleName[MAX_STRLEN + 1];
 	int CO2setpoint;
+	float CO2PIDp;
+	float CO2PIDi;
+	int CO2PIDmaxI;
 	int bathRoomFanTime;
 	int bathRoomFanMaxTime;
 	int motorSpeedMin;
 	int motorSpeedMax;
 	int fixedSpeed[3];
 	motorSettings_t motorSettings[2];
-	float PIDp;
-	float PIDi;
-	int PIDmaxI;
+	float motorPIDp;
+	float motorPIDi;
+	int motorPIDmaxI;
 	int MinBuitenTemperatuurbypass;
 	int MaxBuitenTemperatuurbypass;
 	char checkstr[MAX_STRLEN + 1];

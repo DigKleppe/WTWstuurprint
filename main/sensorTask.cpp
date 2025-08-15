@@ -5,7 +5,6 @@
  *      Author: dig
  */
 
-#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
@@ -13,7 +12,6 @@
 #include "CGIcommonScripts.h"
 #include "averager.h"
 #include "cgiScripts.h"
-#include "esp_log.h"
 #include "freertos/task.h"
 #include "log.h"
 #include "sensorTask.h"
@@ -21,6 +19,10 @@
 #include "udpServer.h"
 #include "wifiConnect.h"
 #include "measureRPMtask.h"
+
+
+#define LOG_LOCAL_LEVEL ESP_LOG_ERROR
+#include "esp_log.h"
 
 #include <cstring>
 #include <math.h>

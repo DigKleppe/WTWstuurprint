@@ -68,13 +68,10 @@ extern "C" void app_main() {
 		ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(err));
 		return;
 	}
-
 	err = loadSettings();
 	// strcpy ( wifiSettings.SSID, "kahjskljahs");  // test
 	startLEDs();
 	wifiConnect();
-	cancelSettingsScript(NULL, 0);
-
 
 	xTaskCreate(sensorTask, "sensorTask", configMINIMAL_STACK_SIZE * 5, NULL, 1, NULL);
 	xTaskCreate(temperatureSensorTask, "temperauurSensorTask", configMINIMAL_STACK_SIZE * 2 , NULL, 1, NULL);
@@ -84,8 +81,6 @@ extern "C" void app_main() {
  	initKeyPins();
 
 	while (1) {
-		//	int rssi = getRssi();
-		//	ESP_LOGI(TAG, "RSSI: %d", rssi);
 		vTaskDelay(pdMS_TO_TICKS(20)); //
 		keysTimerHandler_ms(pdMS_TO_TICKS(20));
 		
