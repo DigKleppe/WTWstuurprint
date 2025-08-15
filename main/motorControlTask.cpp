@@ -228,6 +228,7 @@ void motorControlTask(void *pvParameters) {
 		motor[id].pid.setDesiredValue(RPMSetpoint);
 		if (RPMSetpoint == 0) {
 			setPWMpercent(PWMchannelList[id], 0);
+			motor[id].actualRPM =  getRPM(id); 
 			vTaskDelay(10 / portTICK_PERIOD_MS);
 		} else {
 			setpointPWM = ((float(RPMSetpoint) / MAXRPM) * (maxPWM - minPWM)) + minPWM;
@@ -261,7 +262,6 @@ void motorControlTask(void *pvParameters) {
 				motor[id].actualRPM = getRPM(id); // for CGI
 			}
 			xLastWakeTime = xTaskGetTickCount();
-		//	while ((motor[id].desiredRPM != RPMSetpoint) && ! forceNewCalibration) {
 
 		// control loop running 
 			while ((motor[id].desiredRPM != 0) && ! forceNewCalibration) {
