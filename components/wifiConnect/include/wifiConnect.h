@@ -23,16 +23,17 @@ extern "C" {
 
 typedef struct {
 	char SSID[33];
-	char pwd[65];
+	char pwd[64];
 	esp_ip4_addr_t ip4Address;
 	esp_ip4_addr_t gw;
-	char upgradeServer[32] ; // eg www.github.com
-	char upgradeURL[128]; 	 // eg  https://digkleppe.github.io//OTAtemplate
-	char upgradeFileName[32]; // name of firmware
-//	char firmwareVersion[MAX_STORAGEVERSIONSIZE]; // holding current app version
+	char upgradeServer[32] ; 
+	char upgradeURL[128]; 	 
+	char upgradeFileName[32]; 
+	char firmwareVersion[MAX_STORAGEVERSIONSIZE]; // holding current app version
 	char SPIFFSversion[MAX_STORAGEVERSIONSIZE];	// holding current spiffs version
 	bool updated;
 }wifiSettings_t;
+
 
 extern wifiSettings_t wifiSettings;
 extern wifiSettings_t wifiSettingsDefaults;

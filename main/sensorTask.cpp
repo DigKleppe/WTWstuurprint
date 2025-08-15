@@ -52,41 +52,41 @@ typedef struct {
 	//	int seqNr;
 } sensorMssg_t;
 
-char buf[500];
+// static char buf[500];
 
-void testLog(void) {
-	log_t tempLog;
-	tempLog.co2[0] = 450;
-	tempLog.co2[1] = 460;
-	tempLog.co2[2] = 470;
-	tempLog.co2[3] = 480;
-	tempLog.hum[0] = 40;
-	tempLog.hum[1] = 50;
-	tempLog.hum[2] = 60;
-	tempLog.hum[3] = 70;
-	tempLog.temperature[0] = 20;
-	tempLog.temperature[1] = 22;
-	tempLog.temperature[2] = 24;
-	tempLog.temperature[3] = 26;
+// void testLog(void) {
+// 	log_t tempLog;
+// 	tempLog.co2[0] = 450;
+// 	tempLog.co2[1] = 460;
+// 	tempLog.co2[2] = 470;
+// 	tempLog.co2[3] = 480;
+// 	tempLog.hum[0] = 40;
+// 	tempLog.hum[1] = 50;
+// 	tempLog.hum[2] = 60;
+// 	tempLog.hum[3] = 70;
+// 	tempLog.temperature[0] = 20;
+// 	tempLog.temperature[1] = 22;
+// 	tempLog.temperature[2] = 24;
+// 	tempLog.temperature[3] = 26;
 
-	for (int n = 0; n < 3; n++) {
-		timeStamp++;
-		addToLog(tempLog);
-		tempLog.co2[0] += 1;
-		tempLog.co2[1] += 1;
-		tempLog.co2[2] += 1;
-		tempLog.co2[3] += 1;
-		tempLog.hum[0] += 0.5;
-		tempLog.hum[1] += 0.5;
-		tempLog.hum[2] += 0.5;
-		tempLog.hum[3] += 0.5;
-		tempLog.temperature[0] += 1;
-		tempLog.temperature[1] += 1;
-		tempLog.temperature[2] += 1;
-		tempLog.temperature[3] += 1;
-	}
-	getAllLogsScript(buf, 100);
-}
+// 	for (int n = 0; n < 3; n++) {
+// 		timeStamp++;
+// 		addToLog(tempLog);
+// 		tempLog.co2[0] += 1;
+// 		tempLog.co2[1] += 1;
+// 		tempLog.co2[2] += 1;
+// 		tempLog.co2[3] += 1;
+// 		tempLog.hum[0] += 0.5;
+// 		tempLog.hum[1] += 0.5;
+// 		tempLog.hum[2] += 0.5;
+// 		tempLog.hum[3] += 0.5;
+// 		tempLog.temperature[0] += 1;
+// 		tempLog.temperature[1] += 1;
+// 		tempLog.temperature[2] += 1;
+// 		tempLog.temperature[3] += 1;
+// 	}
+// 	getAllLogsScript(buf, 100);
+// }
 
 // creates UDP task for receiving sensordata
 // parses the messages

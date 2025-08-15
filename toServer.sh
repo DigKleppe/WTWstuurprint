@@ -1,0 +1,1 @@
+scp  firmWareVersion.txt  build/wtw.bin  storageVersion.txt  build/storage.bin root@digkleppe.nl:/home/firmware/WTW/stuurprint
