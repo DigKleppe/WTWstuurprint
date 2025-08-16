@@ -151,7 +151,7 @@ void parseCGIWriteData(char *buf, int received) {
 		esp_restart();
 	}
 	if (strncmp(buf, "setVal:", 7) == 0) { // values are written , in sensirionTasks write these to SCD30
-		if (readActionScript(&buf[7], writeVarDescriptorTable, NRWRITEVARDESCRIPTORS)) {
+		if (readActionScript(&buf[7], writeVarDescriptorTable, NRWRITEVARDESCRIPTORS) >= 0 ) {
 			save = true;
 		}
 	}

@@ -183,10 +183,10 @@ void brinkTask(void *pvParameters) {
 			ESP_LOGI(TAG, "%s", buf);
 			udpTimer = 2;
 		}
-		// if (tempRPMafvoer > 0)
-		// 	gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on
-		// else
-		// 	gpio_set_level(OUTPUT_BRINKON, 0);
+		if (tempRPMafvoer > 0)
+			gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on
+		else
+			gpio_set_level(OUTPUT_BRINKON, 0);
 
 		if ((binnenTemperatuur > userSettings.MaxBuitenTemperatuurbypass) && (binnenTemperatuur > userSettings.MinBuitenTemperatuurbypass)) {
 			if (buitenTemperatuur < binnenTemperatuur) {
