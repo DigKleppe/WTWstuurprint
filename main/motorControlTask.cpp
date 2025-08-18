@@ -122,7 +122,7 @@ void setRPMpercent(motorID_t id, int percent) {
 		setRPM(id, MINRPM + (float)percent * (MAXRPM - MINRPM) / 100.0);
 	else {
 		motor[id].desiredRPM = 0; // off
-		ESP_LOGI(TAG,"RPM set to 0");
+//		ESP_LOGI(TAG,"RPM set to 0");
 	}
 }
 
@@ -292,8 +292,6 @@ const CGIdesc_t motorInfoDescriptorTable[] = {
 	{"Toevoermotor toerental(RPM)", &motor[TFAN].actualRPM, INT, 1},
 	{"Toevoermotor minPWM (%)", &userSettings.motorSettings[TFAN].minPWM, INT, 1 },
 	{"Toevoermotor maxPWM (%)", &userSettings.motorSettings[TFAN].maxPWM, INT, 1 },
-	{"Binnentemperatuur (°C)" , &binnenTemperatuur, FLT, 1},
-	{"Buitentemperatuur (°C)" , &buitenTemperatuur, FLT,1},
 	{NULL, NULL, FLT,1},
 };
 

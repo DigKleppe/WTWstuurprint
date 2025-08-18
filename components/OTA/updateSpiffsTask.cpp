@@ -56,7 +56,7 @@ void updateSpiffsTask(void *pvParameter) {
 
 	while (!rdy && (err == ESP_OK)) {
 		xQueueSend(httpsReqRdyMssgBox, &mssg, 0);
-		if (xQueueReceive(httpsReqMssgBox, (void*) &mssg, ( UPDATETIMEOUT / portTICK_PERIOD_MS))) {
+		if (xQueueReceive(httpsReqMssgBox, (void*) &mssg, ( CONFIG_OTA_RECV_TIMEOUT / portTICK_PERIOD_MS))) {
 			data_read = mssg.len;
 			block++;
 			putchar('.');

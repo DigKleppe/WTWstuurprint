@@ -19,6 +19,7 @@ handles wifi connect process
 #include "lwip/sys.h"
 #include "mdns.h"
 #include "settings.h"
+#include "softwareVersions.h"
 
 
 #include "esp_smartconfig.h"
@@ -71,12 +72,35 @@ esp_err_t saveSettings(void);
 #define EXAMPLE_ESP_WIFI_SSID "xxx"
 #define EXAMPLE_ESP_WIFI_PASS "yyy"
 
+// typedef struct {
+// 	char SSID[33];
+// 	char pwd[64];
+// 	esp_ip4_addr_t ip4Address;
+// 	esp_ip4_addr_t gw;
+// 	char upgradeServer[32] ; 
+// 	char upgradeURL[128]; 	 
+// 	char upgradeFileName[32]; 
+// 	char firmwareVersion[MAX_STORAGEVERSIONSIZE]; // holding current app version
+// 	char SPIFFSversion[MAX_STORAGEVERSIONSIZE];	// holding current spiffs version
+// 	bool updated;
+// }wifiSettings_t;
+
+
 wifiSettings_t wifiSettings;
 // wifiSettings_t wifiSettingsDefaults = { CONFIG_EXAMPLE_WIFI_SSID,
 // CONFIG_EXAMPLE_WIFI_PASSWORD,ipaddr_addr(DEFAULT_IPADDRESS),ipaddr_addr(DEFAULT_GW),CONFIG_DEFAULT_FIRMWARE_UPGRADE_URL,CONFIG_FIRMWARE_UPGRADE_FILENAME,false
 // };
 wifiSettings_t wifiSettingsDefaults = {
-	CONFIG_EXAMPLE_WIFI_SSID, CONFIG_EXAMPLE_WIFI_PASSWORD, ipaddr_addr(DEFAULT_IPADDRESS), ipaddr_addr(DEFAULT_GW), " ", " ", " ", "0.0", false};
+	CONFIG_EXAMPLE_WIFI_SSID,
+	CONFIG_EXAMPLE_WIFI_PASSWORD,
+	ipaddr_addr(DEFAULT_IPADDRESS),
+	ipaddr_addr(DEFAULT_GW),
+	" ",
+	" ",
+	FIRMWARE_VERSION,
+	SPIFFS_VERSION,
+	false
+};
 
 /* The examples use WiFi configuration that you can set via project configuration menu
 

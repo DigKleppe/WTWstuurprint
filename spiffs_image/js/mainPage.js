@@ -46,8 +46,8 @@ var CO2Options = {
 		1: { logScale: false },
 	},
 	series: {
-		0: { targetAxisIndex: 0 },// CO2
-		1: { targetAxisIndex: 1 },// RPM
+		0: { targetAxisIndex: 1 },// CO2
+		1: { targetAxisIndex: 0 },// RPM
 	},
 
 };

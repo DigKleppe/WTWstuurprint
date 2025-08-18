@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "averager.h"
+#include "settings.h"
 
 const static char *TAG = "tSens";
 
@@ -33,9 +34,9 @@ const static char *TAG = "tSens";
 #define ADC_ATTEN ADC_ATTEN_DB_6
 #define AVERAGES 16
 
-#define RREF 	1200.0 // pullup sensors
-#define R25		550.0
-#define TC 		-1.96
+#define RREF 1200.0 // pullup sensors
+#define R25 550.0
+#define TC -1.96
 
 float binnenTemperatuur, buitenTemperatuur;
 
@@ -112,20 +113,18 @@ void temperatureSensorTask(void *pvParameter) {
 		}
 		float mVCC = voltage[TSREF][0] * 3.0; // reference = 1/3 VCC
 		float Rin = voltage[TSIN][0] * RREF / (mVCC - voltage[TSIN][0]);
-		if (( Rin > 600) || ( Rin < 400))
+		if ((Rin > 600) || (Rin < 400))
 			binnenTemperatuur = 9999;
 		else
-			binnenTemperatuur = 25+ (R25-Rin)/TC;
+			binnenTemperatuur = 25 + (R25 - Rin) / TC + userSettings.binnenTemperatuurOffset;
 
 		float Rout = voltage[TSOUT][0] * RREF / (mVCC - voltage[TSOUT][0]);
-
-		if (( Rout > 600) || ( Rout < 400))
+		if ((Rout > 600) || (Rout < 400))
 			buitenTemperatuur = 9999;
 		else
-			buitenTemperatuur = 25+ (R25-Rout)/TC;
+			buitenTemperatuur = 25 + (R25 - Rout) / TC + userSettings.buitenTemperatuurOffset;
 
-	//	printf( "tin: %1.2f tout: %2.2f\n\r" ,binnenTemperatuur, buitenTemperatuur);
+		//	printf( "tin: %1.2f tout: %2.2f\n\r" ,binnenTemperatuur, buitenTemperatuur);
 		vTaskDelay(pdMS_TO_TICKS(2000));
 	}
 }
-

@@ -25,6 +25,7 @@ static const char *TAG = "updateTask";
 
 volatile updateStatus_t updateStatus;
 volatile bool getNewVersionTaskFinished;
+volatile bool forceUpdate;
 
 typedef struct {
 	char *infoFileName;
@@ -52,6 +53,7 @@ esp_err_t getNewVersion(char *infoFileName, char *newVersion) {
 }
 
 void updateTask(void *pvParameter) {
+	int prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
 	bool doUpdate;
 	char newVersion[MAX_STORAGEVERSIONSIZE];
 	TaskHandle_t updateFWTaskh;
@@ -135,8 +137,11 @@ void updateTask(void *pvParameter) {
 			} else
 				ESP_LOGI(TAG, "Update SPIFFS failed!");
 		}
-		vTaskDelay(CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60 * 1000 / portTICK_PERIOD_MS);
-	//	vTaskDelay(10000 / portTICK_PERIOD_MS);
+		do {
+			vTaskDelay(1000 / portTICK_PERIOD_MS);
+		} while (prescaler-- && ! forceUpdate);
+		forceUpdate = false;
+		prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
 	}
 }
 

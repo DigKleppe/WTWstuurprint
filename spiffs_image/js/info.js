@@ -7,6 +7,14 @@ function init() {
 	setInterval(function() { timer() }, 1000);
 }
 
+function forgetWifi() {
+	sendItem("forgetWifi");
+}
+
+function checkUpdates () {
+	sendItem( "checkUpdates");
+}
+
 function timer() {
 	if (document.visibilityState == "hidden")
 		return;

@@ -37,6 +37,9 @@ char checkstr[MAX_STRLEN+1];
 	// int motorPIDmaxI;
 	// int MinBuitenTemperatuurbypass;
 	// int MaxBuitenTemperatuurbypass;
+	// float buitenTemperatuurOffset; 
+	// float binnenTemperatuurOffset;
+	// int nrSensors;
 	// char checkstr[MAX_STRLEN + 1];
 
 userSettings_t userSettingsDefaults = {
@@ -56,6 +59,9 @@ userSettings_t userSettingsDefaults = {
 	30,
 	10,
 	22,
+	0,
+	0,
+	1,
 	{ USERSETTINGS_CHECKSTR }
 };
 
@@ -145,7 +151,14 @@ esp_err_t loadSettings() {
 		ESP_LOGI(TAG, "usersettings loaded");
 	}
 	return err;
-
 }
+
+void setUserDefaults(void) {
+	userSettings = userSettingsDefaults;
+	ESP_LOGI(TAG, "usersettings defaults");
+	saveSettings();
+}
+
+
 }
 

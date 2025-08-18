@@ -36,6 +36,9 @@ typedef struct {
 	int motorPIDmaxI;
 	int MinBuitenTemperatuurbypass;
 	int MaxBuitenTemperatuurbypass;
+	float buitenTemperatuurOffset;
+	float binnenTemperatuurOffset;
+	int nrSensors;
 	char checkstr[MAX_STRLEN + 1];
 } userSettings_t;
 
@@ -55,6 +58,7 @@ extern "C" {
 #endif
 esp_err_t saveSettings(void);
 esp_err_t loadSettings(void);
+void setUserDefaults(void);
 
 #ifdef __cplusplus
 }

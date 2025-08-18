@@ -12,13 +12,11 @@
 #define BINARY_INFO_FILENAME "firmWareVersion.txt"
 #define SPIFFS_INFO_FILENAME "storageVersion.txt"
 
-#define UPDATETIMEOUT (24 * 60 * 60) //seconds 
-
 #define BUFFSIZE 		1024 // buffer size for http
 
 esp_err_t getNewVersion (char * infoFileName , char * newVersion);
 void updateTask(void *pvParameter);
-
+extern volatile bool forceUpdate;
 extern volatile bool getNewVersionTaskFinished;
 
 typedef enum {UPDATE_RDY, UPDATE_BUSY, UPDATE_ERROR } updateStatus_t;
