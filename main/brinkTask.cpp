@@ -102,7 +102,7 @@ void brinkTask(void *pvParameters) {
 
 		} else {
 			bathRoomMaxTimer = -1; // ready to start
-			if (bathRoomTimer < 0) // switch off direct without bathroomTimer
+			if (bathRoomTimer <= 0) // switch off direct without bathroomTimer
 				manualLevel = 0;
 		}
 
@@ -122,7 +122,7 @@ void brinkTask(void *pvParameters) {
 		}
 
 		if (keysRT & SK2) // keuken
-			if (manualLevel == 0)
+			if(bathRoomTimer <= 0)
 				manualLevel = 1;
 
 		if (keysRT & SK3)
