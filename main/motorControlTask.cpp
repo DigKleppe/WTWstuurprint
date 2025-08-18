@@ -138,6 +138,7 @@ void motorControlTask(void *pvParameters) {
 	int lastRPM = MAXRPM;
 	int debounce = 0;
 	int RPMSetpoint;
+	int retries = 0;
 
 	TickType_t xLastWakeTime;
 	if (!PWMisInitialized) {
@@ -145,7 +146,6 @@ void motorControlTask(void *pvParameters) {
 		PWMinit();
 		xTaskCreate(measureRPMtask, "measureRPM", 8000, NULL, 1, NULL);
 	}
-
 	motor[id].pid.setImaxImin(userSettings.motorPIDmaxI,-userSettings.motorPIDmaxI );
 	motor[id].pid.setPIDValues(userSettings.motorPIDp , userSettings.motorPIDi, 0);
 
@@ -156,6 +156,7 @@ void motorControlTask(void *pvParameters) {
 	do {
 		if (!userSettings.motorSettings[id].isCalibrated) {
 			setPWMpercent(PWMchannelList[id], 100);
+			retries = 0;
 			// determine maximum PWM
 			// motor has slowstart ramp up first
 			do {
@@ -165,8 +166,11 @@ void motorControlTask(void *pvParameters) {
 					lastRPM = getRPM(id);
 				} else
 					found = true;
+				if (retries++ > 10)
+					motor[id].status = MOTOR_FAIL;
 			} while (!found);
-
+			
+			motor[id].status = MOTOR_OK;
 			found = false;
 			// then decrease PWM to find max effective PWM percentage
 			lastRPM = getRPM(id);
@@ -262,6 +266,13 @@ void motorControlTask(void *pvParameters) {
 				motor[id].actualRPM = getRPM(id); // for CGI
 			}
 			xLastWakeTime = xTaskGetTickCount();
+			if ( motor[id].actualRPM == 0) {
+				ESP_LOGE(TAG, "Geen toerental");
+				motor[id].status = MOTOR_FAIL;
+			}
+			else
+				motor[id].status = MOTOR_OK;
+
 
 		// control loop running 
 			while ((motor[id].desiredRPM != 0) && ! forceNewCalibration) {
@@ -312,7 +323,9 @@ int resetFanLimitsScript(char *pBuffer, int count)  {
 	}
 	return 0;
 }
-
+motorStatus_t getMotorStatus ( motorID_t id) {
+	return motor[id].status;
+}
 
 
 

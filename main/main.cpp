@@ -15,6 +15,7 @@
 #include "temperatureSensorTask.h"
 #include "brinkTask.h"
 #include "updateTask.h"
+#include "systemCheckTask.h"
 #include "keys.h"
 #include "keyDefs.h"
 
@@ -79,8 +80,8 @@ extern "C" void app_main() {
 	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, NULL);
  	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, NULL);
 	xTaskCreate(brinkTask, "brinkTask", configMINIMAL_STACK_SIZE * 3, NULL, 1, NULL);
-	xTaskCreate(&updateTask, "updateTask",2* 8192, NULL, 5, NULL);
-
+	xTaskCreate(&updateTask, "updateTask",2* 8192, NULL, 1, NULL);
+	xTaskCreate(&systemCheckTask, "systemCheckTask",configMINIMAL_STACK_SIZE * 2, NULL, 1, NULL);
  	initKeyPins();
 
 	while (1) {

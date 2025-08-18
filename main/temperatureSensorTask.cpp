@@ -18,6 +18,7 @@
 
 #include "averager.h"
 #include "settings.h"
+#include "temperatureSensorTask.h"
 
 const static char *TAG = "tSens";
 
@@ -114,13 +115,13 @@ void temperatureSensorTask(void *pvParameter) {
 		float mVCC = voltage[TSREF][0] * 3.0; // reference = 1/3 VCC
 		float Rin = voltage[TSIN][0] * RREF / (mVCC - voltage[TSIN][0]);
 		if ((Rin > 600) || (Rin < 400))
-			binnenTemperatuur = 9999;
+			binnenTemperatuur = ERRORTEMP;
 		else
 			binnenTemperatuur = 25 + (R25 - Rin) / TC + userSettings.binnenTemperatuurOffset;
 
 		float Rout = voltage[TSOUT][0] * RREF / (mVCC - voltage[TSOUT][0]);
 		if ((Rout > 600) || (Rout < 400))
-			buitenTemperatuur = 9999;
+			buitenTemperatuur = ERRORTEMP;
 		else
 			buitenTemperatuur = 25 + (R25 - Rout) / TC + userSettings.buitenTemperatuurOffset;
 

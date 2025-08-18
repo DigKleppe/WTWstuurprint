@@ -7,7 +7,7 @@
 #define MAXRPM 2900 //  2300 for R3G140-AW05-12 EBM-Papst, measured on old PCB: 2940
 #define MINRPM 750  
 typedef enum { AFAN, TFAN, BOTHFANS} motorID_t;
-typedef enum { MOTOR_K, MOTOR_FAIL} motorStatus_t;
+typedef enum { MOTOR_OK, MOTOR_FAIL} motorStatus_t;
 void motorControlTask(void *pvParameters);
 typedef struct {
     int desiredRPM;
@@ -28,6 +28,7 @@ void setRPM(motorID_t id, float rpm);
 int resetFanLimitsScript(char *pBuffer, int count) ;
 
 void setRPMpercent(motorID_t id, int percent);
+motorStatus_t getMotorStatus ( motorID_t id) ;
 
 extern const CGIdesc_t motorInfoDescriptorTable[];
 

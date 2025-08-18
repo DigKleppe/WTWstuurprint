@@ -319,19 +319,21 @@ int getSensorInfoScript(char *pBuffer, int count) {
 	return 0;
 }
 
-int getInfoValuesScript(char *pBuffer, int count) {
-	int len = 0;
-	switch (scriptState) {
-	case 0:
-		scriptState++;
-		//		len = sprintf(pBuffer + len, "%s,%1.2f\n", "temperatuur offset", userSettings.temperatureOffset);
-		len += sprintf(pBuffer + len, "%s,%s\n", "firmwareversie", getFirmWareVersion());
-		len += sprintf(pBuffer + len, "%s,%s\n", "SPIFFS versie", wifiSettings.SPIFFSversion);
-		len += sprintf(pBuffer + len, "%s,%d\n", "RSSI", getRssi());
-		return len;
-		break;
-	default:
-		break;
-	}
-	return 0;
-}
+
+
+// int getInfoValuesScript(char *pBuffer, int count) {
+// 	int len = 0;
+// 	switch (scriptState) {
+// 	case 0:
+// 		scriptState++;
+// 		//		len = sprintf(pBuffer + len, "%s,%1.2f\n", "temperatuur offset", userSettings.temperatureOffset);
+// 		len += sprintf(pBuffer + len, "%s,%s\n", "firmwareversie", getFirmWareVersion());
+// 		len += sprintf(pBuffer + len, "%s,%s\n", "SPIFFS versie", wifiSettings.SPIFFSversion);
+// 		len += sprintf(pBuffer + len, "%s,%d\n", "RSSI", getRssi());
+// 		return len;
+// 		break;
+// 	default:
+// 		break;
+// 	}
+// 	return 0;
+//
