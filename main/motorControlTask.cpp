@@ -40,6 +40,9 @@ extern int scriptState;
 #define AV_PWM_PIN GPIO_NUM_16
 #define TV_PWM_PIN GPIO_NUM_18
 
+
+
+
 static motor_t motor[2];
 static bool PWMisInitialized;
 
@@ -118,11 +121,11 @@ void setRPMpercent(motorID_t id, int percent) {
 	if ( percent > 100 )
 		percent = 100;
 		
-	if (percent > 0)
+	if (percent > 0) {
 		setRPM(id, MINRPM + (float)percent * (MAXRPM - MINRPM) / 100.0);
+	}
 	else {
 		motor[id].desiredRPM = 0; // off
-//		ESP_LOGI(TAG,"RPM set to 0");
 	}
 }
 

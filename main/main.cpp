@@ -19,6 +19,13 @@
 #include "keys.h"
 #include "keyDefs.h"
 
+
+//#define USE_STATS 
+
+#ifdef 	USE_STATS
+	char statsBuf[1000];
+#endif
+
 esp_err_t init_spiffs(void);
 
 static const char *TAG = "main";
@@ -50,11 +57,13 @@ void initKeyPins (void) {
 
 int cancelSettingsScript(char *pBuffer, int count); // dummy 
 
-
+#define NO_TASKS 7
 extern "C" void app_main() {
 	time_t now = 0;
 	struct tm timeinfo;
 	int lastSecond = -1;
+
+	TaskHandle_t taskHandles[NO_TASKS];
 
 	esp_err_t err = nvs_flash_init();
 	if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -75,15 +84,15 @@ extern "C" void app_main() {
 	startLEDs();
 	wifiConnect();
 
-	xTaskCreate(sensorTask, "sensorTask", configMINIMAL_STACK_SIZE * 5, NULL, 1, NULL);
-	xTaskCreate(temperatureSensorTask, "temperauurSensorTask", configMINIMAL_STACK_SIZE * 2 , NULL, 1, NULL);
-	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, NULL);
- 	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, NULL);
-	xTaskCreate(brinkTask, "brinkTask", configMINIMAL_STACK_SIZE * 3, NULL, 1, NULL);
-	xTaskCreate(&updateTask, "updateTask",2* 8192, NULL, 1, NULL);
-	xTaskCreate(&systemCheckTask, "systemCheckTask",configMINIMAL_STACK_SIZE * 2, NULL, 1, NULL);
- 	initKeyPins();
-
+	xTaskCreate(sensorTask, "sensorTask", configMINIMAL_STACK_SIZE * 5, NULL, 1, &taskHandles[0]);
+	xTaskCreate(temperatureSensorTask, "temperauurSensorTask", configMINIMAL_STACK_SIZE * 2 , NULL, 1, &taskHandles[1]);
+	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, &taskHandles[2]);
+ 	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, &taskHandles[3]);
+	xTaskCreate(brinkTask, "brinkTask", configMINIMAL_STACK_SIZE * 3, NULL, 1, &taskHandles[4]);
+	xTaskCreate(&updateTask, "updateTask",2* 8192, NULL, 1, &taskHandles[5]);
+	xTaskCreate(&systemCheckTask, "systemCheckTask",configMINIMAL_STACK_SIZE * 2, NULL, 1, &taskHandles[6]);
+	initKeyPins();
+ 
 	while (1) {
 		vTaskDelay(pdMS_TO_TICKS(20)); //
 		keysTimerHandler_ms(pdMS_TO_TICKS(20));
@@ -96,5 +105,18 @@ extern "C" void app_main() {
 			if (timeStamp == 0)
 				timeStamp++;
 		}
+
+#ifdef 	USE_STATS
+		vTaskGetRunTimeStats( statsBuf );
+		printf("%s\n\r", statsBuf);
+		for (int n = 0; n< NO_TASKS; n++)
+		{
+			printf("%s\t", pcTaskGetName( taskHandles[n]));
+			printf("%d\n\r", uxTaskGetStackHighWaterMark( taskHandles[n]));
+		}
+		printf("\n\rFree:%d\n\r", xPortGetFreeHeapSize());
+		vTaskDelay( 2000);
+#endif
+
 	}
 }

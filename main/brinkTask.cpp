@@ -66,9 +66,9 @@ void brinkTask(void *pvParameters) {
 	char buf[64];
 	Pid pid;
 	int tempRPMToevoer = 0, tempRPMafvoer = 0;
-
 	gpio_set_direction(OUTPUT_BRINKON, GPIO_MODE_OUTPUT);
 	gpio_set_drive_capability(OUTPUT_BRINKON, GPIO_DRIVE_CAP_3);
+
 	gpio_set_direction(OUTPUT_BYPASS, GPIO_MODE_OUTPUT);
 
 	while (1) {
@@ -102,8 +102,8 @@ void brinkTask(void *pvParameters) {
 
 		} else {
 			bathRoomMaxTimer = -1; // ready to start
-			if ( bathRoomTimer < 0)  // switch off direct without bathroomTimer
-				manualLevel = 0; 
+			if (bathRoomTimer < 0) // switch off direct without bathroomTimer
+				manualLevel = 0;
 		}
 
 		if (bathRoomTimer > 0) { // timer running. leave manualLevel
@@ -175,6 +175,14 @@ void brinkTask(void *pvParameters) {
 		setRPMpercent(TFAN, tempRPMToevoer);
 		setRPMpercent(AFAN, tempRPMafvoer);
 
+		if ((!userSettings.motorSettings[TFAN].isCalibrated) || (!userSettings.motorSettings[AFAN].isCalibrated)) // motors on to calibrate
+			gpio_set_level(OUTPUT_BRINKON, 1);																	
+		else {
+			if (tempRPMafvoer > 0)
+				gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on if needed
+			else
+				gpio_set_level(OUTPUT_BRINKON, 0); // turn power to motors off
+		}
 		if (udpTimer)
 			udpTimer--;
 		else {
@@ -183,15 +191,11 @@ void brinkTask(void *pvParameters) {
 			ESP_LOGI(TAG, "%s", buf);
 			udpTimer = 2;
 		}
-		if (tempRPMafvoer > 0)
-			gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on
-		else
-			gpio_set_level(OUTPUT_BRINKON, 0);
 
 		if ((binnenTemperatuur > userSettings.MaxBuitenTemperatuurbypass) && (binnenTemperatuur > userSettings.MinBuitenTemperatuurbypass)) {
 			if (buitenTemperatuur < binnenTemperatuur) {
 				gpio_set_level(OUTPUT_BYPASS, 1);
-				ESP_LOGI(TAG, "bypass on");
+			//	ESP_LOGI(TAG, "bypass on");
 			} else
 				gpio_set_level(OUTPUT_BYPASS, 0);
 		} else

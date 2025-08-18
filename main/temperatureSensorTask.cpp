@@ -33,7 +33,7 @@ const static char *TAG = "tSens";
 
 #define NR_ADC_CHANNELS 3
 #define ADC_ATTEN ADC_ATTEN_DB_6
-#define AVERAGES 16
+#define AVERAGES 3 // 16
 
 #define RREF 1200.0 // pullup sensors
 #define R25 550.0
@@ -110,7 +110,10 @@ void temperatureSensorTask(void *pvParameter) {
 			ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, adcChannel[n], &adc_raw[n][0]));
 			averager[n].write(adc_raw[n][0]);
 			int avg = (int)averager[n].average();
+		// voltage[n][0] = 3300 * avg/4096.0;
 			adc_cali_raw_to_voltage(adcCaliHandle[n], avg, &voltage[n][0]);
+	printf("%d %d %d \r\n", n, avg, voltage[n][0]);
+
 		}
 		float mVCC = voltage[TSREF][0] * 3.0; // reference = 1/3 VCC
 		float Rin = voltage[TSIN][0] * RREF / (mVCC - voltage[TSIN][0]);
@@ -125,7 +128,7 @@ void temperatureSensorTask(void *pvParameter) {
 		else
 			buitenTemperatuur = 25 + (R25 - Rout) / TC + userSettings.buitenTemperatuurOffset;
 
-		//	printf( "tin: %1.2f tout: %2.2f\n\r" ,binnenTemperatuur, buitenTemperatuur);
+		printf( "tin: %1.2f tout: %2.2f\n\r" ,binnenTemperatuur, buitenTemperatuur);
 		vTaskDelay(pdMS_TO_TICKS(2000));
 	}
 }
