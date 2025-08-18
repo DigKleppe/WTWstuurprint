@@ -149,6 +149,14 @@ int checkUpdatesScript(char *pBuffer, int count) {
 }
 
 
+int forgetWifiScript(char *pBuffer, int count) {
+	strcpy(wifiSettings.SSID, "xx");
+	strcpy(wifiSettings.pwd, "xx");
+	saveSettings();
+	esp_restart();
+	return 0;
+}
+
 #define NRWRITEVARDESCRIPTORS (sizeof(writeVarDescriptorTable) / sizeof(CGIdesc_t))
 
 void parseCGIWriteData(char *buf, int received) {

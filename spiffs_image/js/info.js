@@ -8,11 +8,11 @@ function init() {
 }
 
 function forgetWifi() {
-	sendItem("forgetWifi");
+	getItem("forgetWifi");
 }
 
 function checkUpdates () {
-	sendItem( "checkUpdates");
+	getItem( "checkUpdates");
 }
 
 function timer() {

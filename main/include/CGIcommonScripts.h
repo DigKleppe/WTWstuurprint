@@ -10,7 +10,7 @@ int getCommonInfoScript (char *pBuffer, int count);
 int getFanInfoScript(char *pBuffer, int count);
 int setUserDefaultsScript(char *pBuffer, int count);
 int checkUpdatesScript(char *pBuffer, int count);
-
+int forgetWifiScript(char *pBuffer, int count);
 
 
 #endif

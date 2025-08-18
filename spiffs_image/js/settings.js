@@ -6,7 +6,7 @@ function initSettings() {
 }
 
 function setuserDefaults(){
-	getIntem("setUserDefaults");
+	getItem("setUserDefaults");
 	getSettings( "getSettings" ,TABLENAME);
 }
 
