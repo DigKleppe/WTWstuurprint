@@ -165,14 +165,15 @@ void motorControlTask(void *pvParameters) {
 			do {
 				vTaskDelay(2000 / portTICK_PERIOD_MS);
 				printf("optrekken %d %d \r\n", (int)id, getRPM(id));
-				if (getRPM(id) < (MAXRPM - 100)) {
+				motor[id].actualRPM =  getRPM(id);
+				if (getRPM(id) < (MAXRPM - 700)) {
 					lastRPM = getRPM(id);
 				} else
 					found = true;
 				if (retries++ > 10)
 					motor[id].status = MOTOR_FAIL;
 			} while (!found);
-			
+			vTaskDelay(5000 / portTICK_PERIOD_MS);
 			motor[id].status = MOTOR_OK;
 			found = false;
 			// then decrease PWM to find max effective PWM percentage
@@ -190,6 +191,7 @@ void motorControlTask(void *pvParameters) {
 					if (debounce-- == 0)
 						found = true;
 				}
+				motor[id].actualRPM =  getRPM(id);
 			} while (!found);
 			found = false;
 			// find lowest effective PWM percentage
@@ -205,6 +207,7 @@ void motorControlTask(void *pvParameters) {
 					setPWMpercent(PWMchannelList[id], minPWM);
 				} else
 					found = true;
+				motor[id].actualRPM =  getRPM(id);
 			} while (!found);
 
 			// determine mimimum value to start motor
@@ -214,6 +217,7 @@ void motorControlTask(void *pvParameters) {
 					minPWM++;
 					printf("Start Min %d %d\r\n", (int)id, minPWM);
 					setPWMpercent(PWMchannelList[id], minPWM);
+					motor[id].actualRPM =  getRPM(id);
 					vTaskDelay(10000 / portTICK_PERIOD_MS);
 				} else
 					found = true;

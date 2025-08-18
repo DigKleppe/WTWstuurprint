@@ -11,6 +11,6 @@ set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_EMBED_TXTFILES "${project_dir}/main/server_certs/ca_cert.pem")
 register_component()
 #uncomment 
-#spiffs_create_partition_image(storage ../spiffs_image FLASH_IN_PROJECT)  
+spiffs_create_partition_image(storage ../spiffs_image FLASH_IN_PROJECT)  
 #target_link_libraries(${COMPONENT_TARGET} "-u ld_include_highint_hdl_my")
 
