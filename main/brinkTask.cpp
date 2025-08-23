@@ -37,6 +37,9 @@ static const char *TAG = "brinkTask";
 
 #define OUTPUT_BRINKON GPIO_NUM_15
 #define OUTPUT_BYPASS GPIO_NUM_9
+#define FREEZETEMPMIN 		-20
+#define CO2POSTTIME 		(15*60)	// seconds 
+#define	CO2POSTTIMESPEED 	5 // % speed in posttime
 
 int overrideLevel; // CGI 0=  permanent off!
 int manualLevel;   // switches
@@ -46,7 +49,7 @@ int overrideTimer;
 
 extern int scriptState;
 
-#define FREEZETEMPMIN -20
+
 
 // als aanvoertemperatuur < 0 wordt de aanvoer beperkt en een onbalans gecreeerd
 // bij - 20 maximale onbalans
@@ -62,6 +65,7 @@ int antifreeze(int percent) {
 
 void brinkTask(void *pvParameters) {
 	int udpTimer = 2;
+	int CO2postTimer = CO2POSTTIME;
 	int CO2Value = 0;
 	char buf[64];
 	Pid pid;
@@ -76,7 +80,8 @@ void brinkTask(void *pvParameters) {
 		tempRPMToevoer = 0;
 		tempRPMafvoer = 0;
 
-		pid.setImaxImin(userSettings.CO2PIDmaxI, -userSettings.CO2PIDmaxI);
+	//	pid.setImaxImin(userSettings.CO2PIDmaxI, -userSettings.CO2PIDmaxI);
+		pid.setImaxImin(userSettings.CO2PIDmaxI, -userSettings.CO2PIDmaxI/2);
 		pid.setPIDValues(userSettings.CO2PIDp, userSettings.CO2PIDi, 0);
 		pid.setDesiredValue(userSettings.CO2setpoint);
 
@@ -132,14 +137,23 @@ void brinkTask(void *pvParameters) {
 
 		if (CO2Value > 0) { // minstens 1 sensor actief?
 			tempRPMafvoer = -pid.update(CO2Value);
-			if (tempRPMafvoer < 0) {
-				tempRPMafvoer = userSettings.motorSpeedMin; // below CO2 setpoint
+			if (tempRPMafvoer < 0) { // below CO2 setpoint
+				if (CO2postTimer  > 0 )
+					tempRPMafvoer = CO2POSTTIMESPEED;
+				if ( tempRPMafvoer < userSettings.motorSpeedMin)
+					tempRPMafvoer = userSettings.motorSpeedMin; 
+			}
+			if ( CO2Value > userSettings.CO2setpoint) {
+				CO2postTimer = CO2POSTTIME;
 			}
 			tempRPMToevoer = tempRPMafvoer;
 		} else {
 			tempRPMafvoer = userSettings.fixedSpeed[0]; // oude stand 1
 			tempRPMToevoer = tempRPMafvoer;
 		}
+
+		if (CO2postTimer >0)
+			CO2postTimer--;
 
 		if (manualLevel > 0) { // set by switches
 			if (userSettings.fixedSpeed[manualLevel] > tempRPMafvoer) {
