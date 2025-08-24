@@ -39,7 +39,7 @@ static const char *TAG = "brinkTask";
 #define OUTPUT_BYPASS GPIO_NUM_9
 #define FREEZETEMPMIN 		-20
 #define CO2POSTTIME 		(15*60)	// seconds 
-#define	CO2POSTTIMESPEED 	5 // % speed in posttime
+#define	CO2POSTTIMESPEED 	1 // % speed in posttime
 
 int overrideLevel; // CGI 0=  permanent off!
 int manualLevel;   // switches
@@ -65,7 +65,7 @@ int antifreeze(int percent) {
 
 void brinkTask(void *pvParameters) {
 	int udpTimer = 2;
-	int CO2postTimer = CO2POSTTIME;
+	int CO2postTimer = 0;
 	int CO2Value = 0;
 	char buf[64];
 	Pid pid;

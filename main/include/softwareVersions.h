@@ -1,7 +1,7 @@
 #ifndef SOFTWAREVERSIONS_H_
 #define SOFTWAREVERSIONS_H_ 
 
-#define FIRMWARE_VERSION "0.0.91"
-#define SPIFFS_VERSION "0.0.5"  
+#define FIRMWARE_VERSION "0.0.95"
+#define SPIFFS_VERSION "0.0.6"  
 
 #endif /* SOFTWAREVERSIONS_H_ */
