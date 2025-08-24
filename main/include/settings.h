@@ -39,6 +39,7 @@ typedef struct {
 	float buitenTemperatuurOffset;
 	float binnenTemperatuurOffset;
 	int nrSensors;
+	int fixedIPdigit;
 	char checkstr[MAX_STRLEN + 1];
 } userSettings_t;
 

@@ -42,17 +42,17 @@ myKey_t getKeyPins(void) {
 
 void initKeyPins (void) {
   gpio_set_direction( GPIO_NUM_4, GPIO_MODE_INPUT);
-  gpio_set_pull_mode( GPIO_NUM_4, GPIO_FLOATING);
+  gpio_set_pull_mode( GPIO_NUM_4, GPIO_PULLDOWN_ONLY);
   gpio_set_direction( GPIO_NUM_5, GPIO_MODE_INPUT);
-  gpio_set_pull_mode( GPIO_NUM_5, GPIO_FLOATING);
+  gpio_set_pull_mode( GPIO_NUM_5, GPIO_PULLDOWN_ONLY);
   gpio_set_direction( GPIO_NUM_6, GPIO_MODE_INPUT);
-  gpio_set_pull_mode( GPIO_NUM_6, GPIO_FLOATING);
+  gpio_set_pull_mode( GPIO_NUM_6, GPIO_PULLDOWN_ONLY);
   gpio_set_direction( GPIO_NUM_7, GPIO_MODE_INPUT);
-  gpio_set_pull_mode( GPIO_NUM_7, GPIO_FLOATING);
+  gpio_set_pull_mode( GPIO_NUM_7, GPIO_PULLDOWN_ONLY);
   gpio_set_direction( GPIO_NUM_12, GPIO_MODE_INPUT);
-  gpio_set_pull_mode( GPIO_NUM_12, GPIO_FLOATING);
+  gpio_set_pull_mode( GPIO_NUM_12, GPIO_PULLDOWN_ONLY);
   gpio_set_direction( GPIO_NUM_13, GPIO_MODE_INPUT);
-  gpio_set_pull_mode( GPIO_NUM_13, GPIO_FLOATING);
+  gpio_set_pull_mode( GPIO_NUM_13, GPIO_PULLDOWN_ONLY);
 }
 
 int cancelSettingsScript(char *pBuffer, int count); // dummy 
@@ -64,6 +64,9 @@ extern "C" void app_main() {
 	int lastSecond = -1;
 
 	TaskHandle_t taskHandles[NO_TASKS];
+
+	gpio_set_direction( GPIO_NUM_37, GPIO_MODE_INPUT);  // link for local test different fixed ip 
+  	gpio_set_pull_mode( GPIO_NUM_37, GPIO_PULLUP_ONLY);
 
 	esp_err_t err = nvs_flash_init();
 	if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -80,6 +83,11 @@ extern "C" void app_main() {
 		return;
 	}
 	err = loadSettings();
+
+	if (gpio_get_level ( GPIO_NUM_37) == 0){ // then link placed opp J2 9-10 for local test
+		strcpy(userSettings.moduleName,"WTW2");
+		userSettings.fixedIPdigit = 90; 
+	}
 	// strcpy ( wifiSettings.SSID, "kahjskljahs");  // test
 	startLEDs();
 	wifiConnect();

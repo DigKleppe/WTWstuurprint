@@ -40,6 +40,7 @@ char checkstr[MAX_STRLEN+1];
 	// float buitenTemperatuurOffset; 
 	// float binnenTemperatuurOffset;
 	// int nrSensors;
+	// int fixedIPdigit;
 	// char checkstr[MAX_STRLEN + 1];
 
 userSettings_t userSettingsDefaults = {
@@ -62,6 +63,7 @@ userSettings_t userSettingsDefaults = {
 	0,
 	0,
 	1,
+	70,
 	{ USERSETTINGS_CHECKSTR }
 };
 

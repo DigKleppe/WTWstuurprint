@@ -41,6 +41,7 @@ const CGIdesc_t writeVarDescriptorTable[] = {
 //	{"Motor PID Imax waarde", &userSettings.motorPIDmaxI, INT, 1},
 	{"Offset buitentemperatuur", &userSettings.buitenTemperatuurOffset, FLT, 1},
 	{"Offset binnentemperatuur", &userSettings.binnenTemperatuurOffset, FLT, 1},
+	{"Laaste IPdigit",&userSettings.fixedIPdigit, INT, 1}, 
 	{NULL, NULL, INT, 1},
 };
 
