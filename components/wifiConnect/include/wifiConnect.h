@@ -21,6 +21,10 @@ extern "C" {
 #endif
 #define MAX_STORAGEVERSIONSIZE 16
 
+
+#define ESP_WIFI_SSID "test"
+#define ESP_WIFI_PASS "Yellowstone"
+
 typedef struct {
 	char SSID[33];
 	char pwd[64];

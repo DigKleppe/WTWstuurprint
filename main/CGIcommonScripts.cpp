@@ -149,10 +149,9 @@ int checkUpdatesScript(char *pBuffer, int count) {
 	return 0;
 }
 
-
 int forgetWifiScript(char *pBuffer, int count) {
-	strcpy(wifiSettings.SSID, "xx");
-	strcpy(wifiSettings.pwd, "xx");
+	strcpy(wifiSettings.SSID, ESP_WIFI_SSID);  // Asus test router
+	strcpy(wifiSettings.pwd, ESP_WIFI_PASS);
 	saveSettings();
 	esp_restart();
 	return 0;
@@ -162,14 +161,6 @@ int forgetWifiScript(char *pBuffer, int count) {
 
 void parseCGIWriteData(char *buf, int received) {
 	bool save = false;
-
-	if (strncmp(buf, "forgetWifi", 10) == 0) {
-		ESP_LOGI(TAG, "Wifisettings erased");
-		strcpy(wifiSettings.SSID, "xx");
-		strcpy(wifiSettings.pwd, "xx");
-		saveSettings();
-		esp_restart();
-	}
 	if (strncmp(buf, "setVal:", 7) == 0) { // values are written , in sensirionTasks write these to SCD30
 		if (readActionScript(&buf[7], writeVarDescriptorTable, NRWRITEVARDESCRIPTORS) >= 0) {
 			save = true;
