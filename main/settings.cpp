@@ -63,7 +63,7 @@ userSettings_t userSettingsDefaults = {
 	0,
 	0,
 	1,
-	70,
+	CONFIG_FIXED_LAST_IP_DIGIT,
 	{ USERSETTINGS_CHECKSTR }
 };
 

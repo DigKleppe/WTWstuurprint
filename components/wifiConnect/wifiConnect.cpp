@@ -60,7 +60,6 @@ bool DHCPoff;
 bool IP6off;
 bool DNSoff;
 bool fileServerOff;
-bool fixedLastIPdigit = true;
 
 bool doStop;
 esp_netif_t *s_sta_netif = NULL;
@@ -70,29 +69,9 @@ static void setStaticIp(esp_netif_t *netif);
 esp_err_t saveSettings(void);
 
 
-
-
-// typedef struct {
-// 	char SSID[33];
-// 	char pwd[64];
-// 	esp_ip4_addr_t ip4Address;
-// 	esp_ip4_addr_t gw;
-// 	char upgradeServer[32] ; 
-// 	char upgradeURL[128]; 	 
-// 	char upgradeFileName[32]; 
-// 	char firmwareVersion[MAX_STORAGEVERSIONSIZE]; // holding current app version
-// 	char SPIFFSversion[MAX_STORAGEVERSIONSIZE];	// holding current spiffs version
-// 	bool updated;
-// }wifiSettings_t;
-
-
 wifiSettings_t wifiSettings;
-// wifiSettings_t wifiSettingsDefaults = { CONFIG_EXAMPLE_WIFI_SSID,
-// CONFIG_EXAMPLE_WIFI_PASSWORD,ipaddr_addr(DEFAULT_IPADDRESS),ipaddr_addr(DEFAULT_GW),CONFIG_DEFAULT_FIRMWARE_UPGRADE_URL,CONFIG_FIRMWARE_UPGRADE_FILENAME,false
-// };
+
 wifiSettings_t wifiSettingsDefaults = {
-//	CONFIG_EXAMPLE_WIFI_SSID,
-//	CONFIG_EXAMPLE_WIFI_PASSWORD,
 	ESP_WIFI_SSID,
 	ESP_WIFI_PASS,
 	ipaddr_addr(DEFAULT_IPADDRESS),
@@ -155,7 +134,6 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_FAIL_BIT BIT1
 #define CONNECTED_BIT BIT0
 static const int ESPTOUCH_DONE_BIT = BIT2;
-
 static const char *TAG = "wifiConnect";
 
 int getRssi(void) {
@@ -166,6 +144,16 @@ int getRssi(void) {
 		ESP_LOGE(TAG, "Failed to get AP info");
 		return 0;
 	}
+}
+static esp_err_t set_dns_server(esp_netif_t *netif, uint32_t addr, esp_netif_dns_type_t type)
+{
+    if (addr && (addr != IPADDR_NONE)) {
+        esp_netif_dns_info_t dns;
+        dns.ip.u_addr.ip4.addr = addr;
+        dns.ip.type = ESP_IPADDR_TYPE_V4;
+        ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, type, &dns));
+    }
+    return ESP_OK;
 }
 
 static void setStaticIp(esp_netif_t *netif) {
@@ -191,10 +179,13 @@ static void setStaticIp(esp_netif_t *netif) {
 		return;
 	}
 
-	//   ESP_LOGD(TAG, "Success to set static ip: %s, netmask: %s, gw: %s", EXAMPLE_STATIC_IP_ADDR, EXAMPLE_STATIC_NETMASK_ADDR,
-	//   EXAMPLE_STATIC_GW_ADDR);
-	//  ESP_ERROR_CHECK(example_set_dns_server(netif, ipaddr_addr(EXAMPLE_MAIN_DNS_SERVER), ESP_NETIF_DNS_MAIN));
-	//  ESP_ERROR_CHECK(example_set_dns_server(netif, ipaddr_addr(EXAMPLE_BACKUP_DNS_SERVER), ESP_NETIF_DNS_BACKUP));
+	if (set_dns_server(netif, (uint32_t) wifiSettings.gw.addr, ESP_NETIF_DNS_MAIN) != ESP_OK)
+		ESP_LOGE(TAG, "Failed to set dns main");
+	if (set_dns_server(netif, ipaddr_addr("8,8,8,8"), ESP_NETIF_DNS_BACKUP) != ESP_OK)
+		ESP_LOGE(TAG, "Failed to set dns backup");
+
+	if (set_dns_server(netif, ipaddr_addr("8,8,4,4"), ESP_NETIF_DNS_FALLBACK) != ESP_OK)
+		ESP_LOGE(TAG, "Failed to set dns fallback");
 }
 
 #ifdef CONFIG_WPS_ENABLED
@@ -331,15 +322,16 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 			ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
 			sprintf(myIpAddress, IPSTR, IP2STR(&event->ip_info.ip));
 
-			if (CONFIG_FIXED_LAST_IP_DIGIT > 0) { // check if the last digit of IP address = CONFIG_FIXED_LAST_IP_DIGIT
+			if (userSettings.fixedIPdigit > 0) { // check if the last digit of IP address = CONFIG_FIXED_LAST_IP_DIGIT
 				uint32_t addr = event->ip_info.ip.addr;
 
-				if ((addr & 0xFF000000) == (CONFIG_FIXED_LAST_IP_DIGIT << 24)) { // last ip digit(LSB) is MSB in addr
+				if ((addr & 0xFF000000) == (userSettings.fixedIPdigit << 24)) { // last ip digit(LSB) is MSB in addr
 					xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);		 // ok
 					connectStatus = IP_RECEIVED;
 				} else {
-					wifiSettings.ip4Address = (esp_ip4_addr_t)((addr & 0x00FFFFFF) + (CONFIG_FIXED_LAST_IP_DIGIT << 24));
+					wifiSettings.ip4Address = (esp_ip4_addr_t)((addr & 0x00FFFFFF) + (userSettings.fixedIPdigit << 24));
 					sprintf(myIpAddress, IPSTR, IP2STR(&wifiSettings.ip4Address));
+					wifiSettings.gw = event->ip_info.gw;
 					saveSettings();
 					ESP_LOGI(TAG, "Set static IP to %s , reconnecting", (myIpAddress));
 					setStaticIp(s_sta_netif);

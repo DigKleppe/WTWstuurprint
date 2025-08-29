@@ -42,10 +42,11 @@ typedef struct {
 extern wifiSettings_t wifiSettings;
 extern wifiSettings_t wifiSettingsDefaults;
 extern char myIpAddress[];
+extern uint8_t lastIpDigit;
 
 #define STATIC_NETMASK_ADDR "255.255.255.0"
 #define DEFAULT_IPADDRESS 	"192.168.2.50"
-#define DEFAULT_GW		 	"192.168.2.255"
+#define DEFAULT_GW		 	"192.168.2.1"
 
 extern bool DHCPoff;
 extern bool DNSoff;
@@ -95,7 +96,6 @@ esp_err_t disconnect(void);
  * UART driver and configuring VFS layer to use UART driver for console I/O.
  */
 esp_err_t configure_stdin_stdout(void);
-
 /**
  * @brief Returns esp-netif pointer created by connect() described by
  * the supplied desc field
@@ -106,27 +106,6 @@ esp_err_t configure_stdin_stdout(void);
  */
 esp_netif_t *get_netif_from_desc(const char *desc);
 
-#if CONFIG_EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD
-/**
- * @brief Register wifi connect commands
- *
- * Provide a simple wifi_connect command in esp_console.
- * This function can be used after esp_console is initialized.
- */
-void register_wifi_connect_commands(void);
-#endif
-
-#if CONFIG_EXAMPLE_CONNECT_ETHERNET
-/**
- * @brief Get the example Ethernet driver handle
- *
- * @return esp_eth_handle_t
- */
-esp_eth_handle_t get_eth_handle(void);
-#endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
-
-#else
-static inline esp_err_t connect(void) {return ESP_OK;}
 #endif // !CONFIG_IDF_TARGET_LINUX
 
 #define CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY 	10

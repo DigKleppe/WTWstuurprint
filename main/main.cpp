@@ -19,7 +19,7 @@
 #include "keys.h"
 #include "keyDefs.h"
 
-
+#define IPDIGITPIN GPIO_NUM_44
 //#define USE_STATS 
 
 #ifdef 	USE_STATS
@@ -65,8 +65,8 @@ extern "C" void app_main() {
 
 	TaskHandle_t taskHandles[NO_TASKS];
 
-	gpio_set_direction( GPIO_NUM_37, GPIO_MODE_INPUT);  // link for local test different fixed ip 
-  	gpio_set_pull_mode( GPIO_NUM_37, GPIO_PULLUP_ONLY);
+	gpio_set_direction( IPDIGITPIN, GPIO_MODE_INPUT);  // link for local test different fixed ip 
+  	gpio_set_pull_mode( IPDIGITPIN, GPIO_PULLUP_ONLY);
 
 	esp_err_t err = nvs_flash_init();
 	if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -84,10 +84,11 @@ extern "C" void app_main() {
 	}
 	err = loadSettings();
 
-	if (gpio_get_level ( GPIO_NUM_37) == 0){ // then link placed opp J2 9-10 for local test
+	if (gpio_get_level ( IPDIGITPIN) == 0){ // then link placed on J2 9-10 for local test
 		strcpy(userSettings.moduleName,"WTW2");
-		userSettings.fixedIPdigit = 90; 
+		userSettings.fixedIPdigit = CONFIG_FIXED_LAST_IP_DIGIT + 10; 
 	}
+
 	// strcpy ( wifiSettings.SSID, "kahjskljahs");  // test
 	startLEDs();
 	wifiConnect();
