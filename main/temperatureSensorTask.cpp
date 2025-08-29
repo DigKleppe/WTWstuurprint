@@ -36,10 +36,29 @@ const static char *TAG = "tSens";
 //  ADC_CHANNEL_2	// ts buiten
 
 #define NR_ADC_CHANNELS 3
-#define ADC_ATTEN ADC_ATTEN_DB_6
+#define ADC_ATTEN ADC_ATTEN_DB_12
+#define AVERAGES 2 // 16
+
+#define RREF 1200.0 // pullup sensors
+#define R25 550.0
+#define TC -1.96
+
+int binnenTemperatuur, buitenTemperatuur;
+
+typedef enum { TSIN, TSOUT, TSREF } sensorID_t;
+
+static adc_channel_t adcChannel[]{ADC_CHANNEL_0, ADC_CHANNEL_1, ADC_CHANNEL_2};
+
+static adc_cali_handle_t adcCaliHandle[NR_ADC_CHANNELS];
+static int adc_raw[NR_ADC_CHANNELS][10];
+static int voltage[NR_ADC_CHANNELS][10];
+static bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
+
+Averager averager[NR_ADC_CHANNELS];
+
 #define EXAMPLE_ADC_UNIT ADC_UNIT_1
-#define EXAMPLE_ADC_UNIT_STR(unit) _EXAMPLE_ADC_UNIT_STR(unit)
 #define EXAMPLE_ADC_CONV_MODE ADC_CONV_SINGLE_UNIT_1
+#define EXAMPLE_ADC_ATTEN ADC_ATTEN_DB_6
 #define EXAMPLE_ADC_BIT_WIDTH SOC_ADC_DIGI_MAX_BITWIDTH
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
@@ -54,24 +73,9 @@ const static char *TAG = "tSens";
 
 #define EXAMPLE_READ_LEN 256
 
-#define RREF 1200.0 // pullup sensors
-#define R25 550.0
-#define TC -1.96
-
-float binnenTemperatuur, buitenTemperatuur;
-
-typedef enum { TSIN, TSOUT, TSREF } sensorID_t;
-
-static adc_channel_t adcChannel[]{ADC_CHANNEL_0, ADC_CHANNEL_1, ADC_CHANNEL_2};
-
-static adc_cali_handle_t adcCaliHandle[NR_ADC_CHANNELS];
-static int voltage[NR_ADC_CHANNELS];
-static Averager averager[NR_ADC_CHANNELS];
 static TaskHandle_t s_task_handle;
 adc_iir_filter_handle_t filter_handle1 = NULL;
 adc_iir_filter_handle_t filter_handle2 = NULL;
-
-static bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
 
 /*---------------------------------------------------------------
 		ADC Calibration
@@ -132,7 +136,7 @@ static void continuous_adc_init(adc_channel_t *channel, uint8_t channel_num, adc
 	adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
 	dig_cfg.pattern_num = channel_num;
 	for (int i = 0; i < channel_num; i++) {
-		adc_pattern[i].atten = ADC_ATTEN;
+		adc_pattern[i].atten = EXAMPLE_ADC_ATTEN;
 		adc_pattern[i].channel = channel[i] & 0x7;
 		adc_pattern[i].unit = EXAMPLE_ADC_UNIT;
 		adc_pattern[i].bit_width = EXAMPLE_ADC_BIT_WIDTH;
@@ -199,7 +203,17 @@ void temperatureSensorTask(void *pvParameter) {
 	ESP_ERROR_CHECK(adc_continuous_start(handle));
 
 	while (1) {
+
+		/**
+		 * This is to show you the way to use the ADC continuous mode driver event callback.
+		 * This `ulTaskNotifyTake` will block when the data processing in the task is fast.
+		 * However in this example, the data processing (print) is slow, so you barely block here.
+		 *
+		 * Without using this event callback (to notify this task), you can still just call
+		 * `adc_continuous_read()` here in a loop, with/without a certain block timeout.
+		 */
 		ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
 		while (1) {
 			ret = adc_continuous_read(handle, result, EXAMPLE_READ_LEN, &ret_num, 0);
 			if (ret == ESP_OK) {
@@ -214,36 +228,42 @@ void temperatureSensorTask(void *pvParameter) {
 						idx = findChannelIndex(chan_num);
 						averager[idx].write(data);
 					} else {
-						ESP_LOGW(TAG, "Invalid data [" PRIu32 "_%" PRIx32 "]", chan_num, data);
+						//	ESP_LOGW(TAG, "Invalid data [" PRIu32 ", " PRIx32 "]", chan_num, data);
 					}
 				}
 				for (int n = 0; n < NR_ADC_CHANNELS; n++) {
 					float avg = averager[n].average();
 
 					//	voltage[n][0] = 3300 * avg / 4096.0;
-					adc_cali_raw_to_voltage(adcCaliHandle[n], (int)avg, &voltage[n]);
+					adc_cali_raw_to_voltage(adcCaliHandle[n], (int)avg, &voltage[n][0]);
 					//	printf("%d %5.2f %d \r\n", n, avg, voltage[n][0]);
 				}
-				float mVCC = voltage[TSREF] * 3.0; // reference = 1/3 VCC
-				float Rin = voltage[TSIN] * RREF / (mVCC - voltage[TSIN]);
+				float mVCC = voltage[TSREF][0] * 3.0; // reference = 1/3 VCC
+				float Rin = voltage[TSIN][0] * RREF / (mVCC - voltage[TSIN][0]);
 				if ((Rin > 600) || (Rin < 400))
 					binnenTemperatuur = ERRORTEMP;
 				else
 					binnenTemperatuur = 25 + (R25 - Rin) / TC; //  + userSettings.binnenTemperatuurOffset;
 
-				float Rout = voltage[TSOUT] * RREF / (mVCC - voltage[TSOUT]);
+				float Rout = voltage[TSOUT][0] * RREF / (mVCC - voltage[TSOUT][0]);
 				if ((Rout > 600) || (Rout < 400))
 					buitenTemperatuur = ERRORTEMP;
 				else
 					buitenTemperatuur = 25 + (R25 - Rout) / TC; //  + userSettings.buitenTemperatuurOffset;
 
-				//				printf("tin: %1.2f tout: %2.2f\n\r", binnenTemperatuur, buitenTemperatuur);
+			//	printf("tin: %1.2f tout: %2.2f\n\r", binnenTemperatuur, buitenTemperatuur);
+				printf("tin: %d tout: %d\n\r", binnenTemperatuur, buitenTemperatuur);
+
 				//				ESP_LOGI(TAG, "%5.2f\t%5.2f\t%5.2f", averager[0].average(), averager[1].average(), averager[2].average());
 
 			} else if (ret == ESP_ERR_TIMEOUT) {
+				// We try to read `EXAMPLE_READ_LEN` until API returns timeout, which means there's no available data
+				//	break;
 				ESP_LOGE(TAG, "Timeout");
 			}
 			vTaskDelay(pdMS_TO_TICKS(1000));
 		}
 	}
 }
+
+

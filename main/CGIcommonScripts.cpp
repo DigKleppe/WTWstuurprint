@@ -39,8 +39,8 @@ const CGIdesc_t writeVarDescriptorTable[] = {
 //	{"Motor PID P waarde", &userSettings.motorPIDp, FLT, 1},
 //	{"Motor PID I waarde", &userSettings.motorPIDi, FLT, 1},
 //	{"Motor PID Imax waarde", &userSettings.motorPIDmaxI, INT, 1},
-	{"Offset buitentemperatuur", &userSettings.buitenTemperatuurOffset, FLT, 1},
-	{"Offset binnentemperatuur", &userSettings.binnenTemperatuurOffset, FLT, 1},
+//	{"Offset buitentemperatuur", &userSettings.buitenTemperatuurOffset, FLT, 1},
+//	{"Offset binnentemperatuur", &userSettings.binnenTemperatuurOffset, FLT, 1},
 	{"Laaste IPdigit",&userSettings.fixedIPdigit, INT, 1}, 
 	{NULL, NULL, INT, 1},
 };
@@ -49,8 +49,8 @@ const CGIdesc_t commonInfoTable[] = {
 	{"firmwareversie", (void *)firmWareVersion, STR, 1},
 	{"SPIFFS versie", wifiSettings.SPIFFSversion, STR, 1},
 	{"RSSI", (void *)&rssi, INT, 1},
-	{"Binnentemperatuur (°C)", &binnenTemperatuur, FLT, 1},
-	{"Buitentemperatuur (°C)", &buitenTemperatuur, FLT, 1},
+	{"Binnentemperatuur (°C)", &binnenTemperatuur, INT, 1},
+	{"Buitentemperatuur (°C)", &buitenTemperatuur, INT, 1},
 	{NULL, NULL, INT, 1}
 };
 

@@ -3,6 +3,6 @@
 
 #define ERRORTEMP 9999.0f
 
-extern float binnenTemperatuur, buitenTemperatuur;
+extern int binnenTemperatuur, buitenTemperatuur;
 void temperatureSensorTask(void *pvParameter);
 #endif
