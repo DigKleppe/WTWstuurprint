@@ -31,12 +31,12 @@ const static char *TAG = "tSens";
 ---------------------------------------------------------------*/
 // ADC1 Channels
 
-// ADC_CHANNEL_0  	// ts binnen
-// ADC_CHANNEL_1 	// ref 1/3 VCC
-//  ADC_CHANNEL_2	// ts buiten
+// ADC_CHANNEL_0  	 ts binnen
+// ADC_CHANNEL_1 	 ts buiten
+//  ADC_CHANNEL_2	 ref 1/3 VCC
 
 #define NR_ADC_CHANNELS 3
-#define ADC_ATTEN ADC_ATTEN_DB_12
+#define ADC_ATTEN ADC_ATTEN_DB_6
 #define AVERAGES 2 // 16
 
 #define RREF 1200.0 // pullup sensors
@@ -50,7 +50,6 @@ typedef enum { TSIN, TSOUT, TSREF } sensorID_t;
 static adc_channel_t adcChannel[]{ADC_CHANNEL_0, ADC_CHANNEL_1, ADC_CHANNEL_2};
 
 static adc_cali_handle_t adcCaliHandle[NR_ADC_CHANNELS];
-static int adc_raw[NR_ADC_CHANNELS][10];
 static int voltage[NR_ADC_CHANNELS][10];
 static bool adc_calibration_init(adc_unit_t unit, adc_channel_t channel, adc_atten_t atten, adc_cali_handle_t *out_handle);
 
@@ -58,7 +57,6 @@ Averager averager[NR_ADC_CHANNELS];
 
 #define EXAMPLE_ADC_UNIT ADC_UNIT_1
 #define EXAMPLE_ADC_CONV_MODE ADC_CONV_SINGLE_UNIT_1
-#define EXAMPLE_ADC_ATTEN ADC_ATTEN_DB_6
 #define EXAMPLE_ADC_BIT_WIDTH SOC_ADC_DIGI_MAX_BITWIDTH
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
@@ -136,7 +134,7 @@ static void continuous_adc_init(adc_channel_t *channel, uint8_t channel_num, adc
 	adc_digi_pattern_config_t adc_pattern[SOC_ADC_PATT_LEN_MAX] = {0};
 	dig_cfg.pattern_num = channel_num;
 	for (int i = 0; i < channel_num; i++) {
-		adc_pattern[i].atten = EXAMPLE_ADC_ATTEN;
+		adc_pattern[i].atten = ADC_ATTEN;
 		adc_pattern[i].channel = channel[i] & 0x7;
 		adc_pattern[i].unit = EXAMPLE_ADC_UNIT;
 		adc_pattern[i].bit_width = EXAMPLE_ADC_BIT_WIDTH;
