@@ -248,6 +248,11 @@ void motorControlTask(void *pvParameters) {
 
 			for (int n = 0; n < 20; n++) {
 				lastRPM = getRPM(id);
+				if ( lastRPM == 0)
+					motor[id].status = MOTOR_FAIL;
+				else
+					motor[id].status = MOTOR_OK;
+
 				motor[id].actualRPM = lastRPM; // for CGI
 				vTaskDelay(1000 / portTICK_PERIOD_MS);
 				if (lastRPM > 100) {
@@ -299,6 +304,10 @@ void motorControlTask(void *pvParameters) {
 			//	printf("AV%d, %2.2f PID: %1.1f RPM:%d \n", (int)id, control, control - setpointPWM, getRPM(id));
 				setPWMpercent(PWMchannelList[id], control);
 				motor[id].actualRPM =  getRPM(id);
+				if ( motor[id].actualRPM  == 0)
+					motor[id].status = MOTOR_FAIL;
+				else
+					motor[id].status = MOTOR_OK;
 			}
 		}
 	} while (1);
