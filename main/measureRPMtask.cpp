@@ -42,8 +42,11 @@ static uint32_t TIMERFREQ = 10 * 1000 * 1000;
 static int PRMTIMEOUT =  20; // * 10ms 
 
 static gptimer_handle_t gptimer;
-static Averager AVaverager(3);
-static Averager TVaverager(3);
+static Averager AVaverager(32);
+static Averager TVaverager(32);
+
+static Averager AVaverager2(256);
+static Averager TVaverager2(256);
 
 static void IRAM_ATTR gpio_isr_handler(void *arg) {
 	uint64_t newTmrVal;
@@ -150,14 +153,35 @@ void measureRPMtask(void *pvParameters) {
 }
 
 int getRPM(motorID_t id) {
+	float avg;
+	if (id == TFAN) {
+		if (TtimeoutTmr > 0) {
+			avg = TVaverager.average();
+			TVaverager2.write( (int) avg);
+			return (int)avg;
+		}
+		else
+			return 0;
+	} else {
+		if (AtimeoutTmr > 0) {
+			avg = AVaverager.average();
+			AVaverager2.write( (int) avg);
+			return (int)avg;
+		}
+		else
+			return 0;
+	}
+}
+
+int getAVGRPM(motorID_t id) {
 	if (id == TFAN) {
 		if (TtimeoutTmr > 0)
-			return (int)TVaverager.average();
+			return (int)TVaverager2.average();
 		else
 			return 0;
 	} else {
 		if (AtimeoutTmr > 0)
-			return (int)AVaverager.average();
+			return (int)AVaverager2.average();
 		else
 			return 0;
 	}

@@ -40,11 +40,13 @@ static const char *TAG = "brinkTask";
 #define FREEZETEMPMIN 		-20
 #define CO2POSTTIME 		(15*60)	// seconds 
 #define	CO2POSTTIMESPEED 	1 // % speed in posttime
+#define ONTIME				60 // after 60 seconds inactive switch off motors
 
 int overrideLevel; // CGI 0=  permanent off!
 int manualLevel;   // switches
 int bathRoomTimer;
 int bathRoomMaxTimer = -1;
+int onTimer;
 int overrideTimer;
 
 extern int scriptState;
@@ -192,17 +194,22 @@ void brinkTask(void *pvParameters) {
 		if ((!userSettings.motorSettings[TFAN].isCalibrated) || (!userSettings.motorSettings[AFAN].isCalibrated)) // motors on to calibrate
 			gpio_set_level(OUTPUT_BRINKON, 1);																	
 		else {
-			if (tempRPMafvoer > 0)
+			if ( onTimer) {
+				onTimer--;
 				gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on if needed
+			}
 			else
 				gpio_set_level(OUTPUT_BRINKON, 0); // turn power to motors off
+
+			if (tempRPMafvoer > 0)  
+				onTimer = ONTIME;
 		}
 		if (udpTimer)
 			udpTimer--;
 		else {
 			sprintf(buf, "maxCO2:%d Toe: %d Af:%d BRtimer:%d BRmaxTmr:%d \n\r", CO2Value, tempRPMToevoer, tempRPMafvoer, bathRoomTimer, bathRoomMaxTimer);
 			UDPsendMssg(5002, (void *)buf, strlen(buf));
-			ESP_LOGI(TAG, "%s", buf);
+		//	ESP_LOGI(TAG, "%s", buf);
 			udpTimer = 2;
 		}
 

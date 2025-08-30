@@ -8,19 +8,19 @@ menu "Firmware_Storage Upgrade Configuration"
                  
      config DEFAULT_FIRMWARE_UPGRADE_SERVER
         string "firmware upgrade server"
-        default "www.github.com"
+        default "www.digkleppe.nl"
         help
             URL of server which hosts the firmware/storage image.
      
      config DEFAULT_FIRMWARE_UPGRADE_URL
         string "firmware upgrade url endpoint"
-        default "https://digkleppe.github.io//OTAtemplate//"
+        default "https://digkleppe.nl//firmware/WTW/stuurprint"
         help
-            URL of server which hosts the firmware/storage image.
+            URL of folder which hosts the firmware/storage image.
      
      config FIRMWARE_UPGRADE_FILENAME
         string "firmware upgrade filename"
-        default "OTAtemplate.bin"
+        default "wtw.bin"
         help
             filename of the upgrade image.     
       

@@ -250,7 +250,7 @@ void temperatureSensorTask(void *pvParameter) {
 					buitenTemperatuur = 25 + (R25 - Rout) / TC; //  + userSettings.buitenTemperatuurOffset;
 
 			//	printf("tin: %1.2f tout: %2.2f\n\r", binnenTemperatuur, buitenTemperatuur);
-				printf("tin: %d tout: %d\n\r", binnenTemperatuur, buitenTemperatuur);
+			//	printf("tin: %d tout: %d\n\r", binnenTemperatuur, buitenTemperatuur);
 
 				//				ESP_LOGI(TAG, "%5.2f\t%5.2f\t%5.2f", averager[0].average(), averager[1].average(), averager[2].average());
 
@@ -258,6 +258,8 @@ void temperatureSensorTask(void *pvParameter) {
 				// We try to read `EXAMPLE_READ_LEN` until API returns timeout, which means there's no available data
 				//	break;
 				ESP_LOGE(TAG, "Timeout");
+				adc_continuous_stop( handle);
+				adc_continuous_start(handle);
 			}
 			vTaskDelay(pdMS_TO_TICKS(1000));
 		}

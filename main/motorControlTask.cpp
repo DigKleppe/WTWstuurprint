@@ -28,7 +28,7 @@ static const char *TAG = "MCTask";
 
 extern int scriptState;
 
-#define PID_INTERVAL 1000 // ms
+#define PID_INTERVAL 100 // ms
 
 // PWM
 #define LEDC_TIMER LEDC_TIMER_0
@@ -39,9 +39,6 @@ extern int scriptState;
 #define LEDC_FREQUENCY (1250)			// Frequency in Hertz
 #define AV_PWM_PIN GPIO_NUM_16
 #define TV_PWM_PIN GPIO_NUM_18
-
-
-
 
 static motor_t motor[2];
 static bool PWMisInitialized;
@@ -236,6 +233,9 @@ void motorControlTask(void *pvParameters) {
 	// control loop start 
 
 		RPMSetpoint = motor[id].desiredRPM;
+
+		printf( "toerental%d: %d\r\n", id, RPMSetpoint);
+		
 		motor[id].pid.setDesiredValue(RPMSetpoint);
 		if (RPMSetpoint == 0) {
 			setPWMpercent(PWMchannelList[id], 0);
@@ -269,7 +269,7 @@ void motorControlTask(void *pvParameters) {
 				else
 					setpointPWM++;
 				setPWMpercent(PWMchannelList[id], setpointPWM);
-				printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM);
+				printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM) ;
 				motor[id].actualRPM = getRPM(id); // for CGI
 			}
 			xLastWakeTime = xTaskGetTickCount();
@@ -294,7 +294,9 @@ void motorControlTask(void *pvParameters) {
 				control = motor[id].pid.update(getRPM(id)) + setpointPWM;
 				if (control < minPWM)
 					control = minPWM;
-				printf("AV%d: %2.2f PID: %1.1f RPM:%d \n", (int)id, control, control - setpointPWM, getRPM(id));
+	
+				printf(">AV,PID%d:%1.1f,RPM%d:%d,AVG%d:%d\r\n",(int)id, control,(int)id, getRPM(id),(int)id, getAVGRPM(id));		
+			//	printf("AV%d, %2.2f PID: %1.1f RPM:%d \n", (int)id, control, control - setpointPWM, getRPM(id));
 				setPWMpercent(PWMchannelList[id], control);
 				motor[id].actualRPM =  getRPM(id);
 			}

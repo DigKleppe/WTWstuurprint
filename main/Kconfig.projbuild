@@ -21,13 +21,13 @@ menu "Connection Configuration"
     if EXAMPLE_CONNECT_WIFI
         config EXAMPLE_WIFI_SSID
             string "WiFi SSID"
-            default "myssid"
+            default "test"
             help
                 SSID (network name) for the example to connect to.
 
         config EXAMPLE_WIFI_PASSWORD
             string "WiFi Password"
-            default "mypassword"
+            default "Yellowstone"
             help
                 WiFi password (WPA or WPA2) for the example to use.
                 Can be left blank if the network has no security set.
@@ -35,7 +35,7 @@ menu "Connection Configuration"
        config FIXED_LAST_IP_DIGIT 
             int "last digit IP address"
             range 0 250
-            default 0
+            default 70
             help 
                 ip will be xx.xx.xx.pp xx from DHCP 
                 set to zero to disable
