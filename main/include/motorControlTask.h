@@ -12,6 +12,7 @@ void motorControlTask(void *pvParameters);
 typedef struct {
     int desiredRPM;
     int actualRPM;
+    float actualPWM;
     motorStatus_t status;
     Pid pid;
 } motor_t;

@@ -165,6 +165,7 @@ void motorControlTask(void *pvParameters) {
 		} else {
 			setpointPWM = ((float(RPMSetpoint) / MAXRPM) * (maxPWM - minPWM)) + minPWM;
 			setPWMpercent(PWMchannelList[id], setpointPWM);
+			motor[id].actualPWM = setpointPWM;
 			printf("setpointPWM %d: %f\r\n", (int)id, setpointPWM);
 
 			for (int n = 0; n < 20; n++) {
@@ -194,6 +195,7 @@ void motorControlTask(void *pvParameters) {
 				else
 					setpointPWM++;
 				setPWMpercent(PWMchannelList[id], setpointPWM);
+				motor[id].actualPWM = setpointPWM;
 				printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM);
 				motor[id].actualRPM = getAVGRPM(id); // for CGI
 			}
@@ -224,6 +226,7 @@ void motorControlTask(void *pvParameters) {
 				control = motor[id].pid.update(getRPM(id)) + setpointPWM;
 				if (control < minPWM)
 					control = minPWM;
+				motor[id].actualPWM = control;
 
 				printf(">AV,PID%d:%1.1f,RPM%d:%d,AVG%d:%d\r\n", (int)id, control, (int)id, getRPM(id), (int)id, getAVGRPM(id));
 				//	printf("AV%d, %2.2f PID: %1.1f RPM:%d \n", (int)id, control, control - setpointPWM, getRPM(id));
@@ -242,11 +245,15 @@ void motorControlTask(void *pvParameters) {
 
 const CGIdesc_t motorInfoDescriptorTable[] = {
 	{"Afvoermotor toerental(RPM)", &motor[AFAN].actualRPM, INT, 1},
+	{"Afvoermotor PWM", &motor[AFAN].actualPWM, FLT, 1},
 	{"Afvoermotor minPWM (%)", &advSettings.motorSettings[AFAN].minPWM, INT, 1},
 	{"Afvoermotor maxPWM (%)", &advSettings.motorSettings[AFAN].maxPWM, INT, 1},
 	{"Toevoermotor toerental(RPM)", &motor[TFAN].actualRPM, INT, 1},
+	{"Toevoermotor PWM", &motor[TFAN].actualPWM, FLT, 1},
 	{"Toevoermotor minPWM (%)", &advSettings.motorSettings[TFAN].minPWM, INT, 1},
 	{"Toevoermotor maxPWM (%)", &advSettings.motorSettings[TFAN].maxPWM, INT, 1},
+
+
 	{NULL, NULL, FLT, 1},
 };
 
