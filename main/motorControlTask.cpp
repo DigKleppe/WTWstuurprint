@@ -132,111 +132,31 @@ void motorControlTask(void *pvParameters) {
 
 	float control;
 	float setpointPWM;
-	int minPWM = 13;
-	bool found = false;
-	int maxPWM = 65;
+	int minPWM;
+	int maxPWM;
 	int lastRPM = MAXRPM;
-	int debounce = 0;
 	int RPMSetpoint;
-	int retries = 0;
 
 	TickType_t xLastWakeTime;
+
 	if (!PWMisInitialized) {
 		PWMisInitialized = true;
 		PWMinit();
 		xTaskCreate(measureRPMtask, "measureRPM", 8000, NULL, 1, NULL);
 	}
-	motor[id].pid.setImaxImin(userSettings.motorPIDmaxI,-userSettings.motorPIDmaxI );
-	motor[id].pid.setPIDValues(userSettings.motorPIDp , userSettings.motorPIDi, 0);
 
 	// setPWMpercent(PWMchannelList[id], 15 + (id * 10));
 	// while(1)
 	//  	vTaskDelay(100);
 
 	do {
-		if (!userSettings.motorSettings[id].isCalibrated) {
-			setPWMpercent(PWMchannelList[id], 100);
-			retries = 0;
-			// determine maximum PWM
-			// motor has slowstart ramp up first
-			do {
-				vTaskDelay(2000 / portTICK_PERIOD_MS);
-				printf("optrekken %d %d \r\n", (int)id, getRPM(id));
-				motor[id].actualRPM =  getRPM(id);
-				if (getRPM(id) < (MAXRPM - 700)) {
-					lastRPM = getRPM(id);
-				} else
-					found = true;
-				if (retries++ > 10)
-					motor[id].status = MOTOR_FAIL;
-			} while (!found);
-			vTaskDelay(5000 / portTICK_PERIOD_MS);
-			motor[id].status = MOTOR_OK;
-			found = false;
-			// then decrease PWM to find max effective PWM percentage
-			lastRPM = getRPM(id);
-			printf("Max AV%d  %d\n", (int)id, lastRPM);
-			debounce = 3;
-			do {
-				setPWMpercent(PWMchannelList[id], maxPWM);
-				vTaskDelay(2000 / portTICK_PERIOD_MS);
-				if (getRPM(id) >= (lastRPM - 50)) {
-					maxPWM--;
-					printf("Max AV %d  %d \r\n", getRPM(id), maxPWM);
-					debounce = 3;
-				} else {
-					if (debounce-- == 0)
-						found = true;
-				}
-				motor[id].actualRPM =  getRPM(id);
-			} while (!found);
-			found = false;
-			// find lowest effective PWM percentage
-
-			setPWMpercent(PWMchannelList[id], minPWM);
-			vTaskDelay(5000 / portTICK_PERIOD_MS);
-
-			do {
-				vTaskDelay(5000 / portTICK_PERIOD_MS);
-				if (getRPM(id)) {
-					minPWM--;
-					printf("Min: %d %d %d\r\n", (int)id, minPWM, getRPM(id));
-					setPWMpercent(PWMchannelList[id], minPWM);
-				} else
-					found = true;
-				motor[id].actualRPM =  getRPM(id);
-			} while (!found);
-
-			// determine mimimum value to start motor
-			found = false;
-			do {
-				if (!getRPM(id)) { //
-					minPWM++;
-					printf("Start Min %d %d\r\n", (int)id, minPWM);
-					setPWMpercent(PWMchannelList[id], minPWM);
-					motor[id].actualRPM =  getRPM(id);
-					vTaskDelay(10000 / portTICK_PERIOD_MS);
-				} else
-					found = true;
-			} while (!found);
-			userSettings.motorSettings[id].isCalibrated = true;
-			userSettings.motorSettings[id].maxPWM = maxPWM;
-			userSettings.motorSettings[id].minPWM = minPWM;
-			saveSettings();
-		} // end if !calibrated
-
-		else {
-			maxPWM = userSettings.motorSettings[id].maxPWM;
-			minPWM = userSettings.motorSettings[id].minPWM;
-		}
-
-	// control loop start 
-
+		maxPWM = userSettings.motorSettings[id].maxPWM;
+		minPWM = userSettings.motorSettings[id].minPWM;
+		motor[id].pid.setImaxImin(userSettings.motorPIDmaxI,-userSettings.motorPIDmaxI );
+		motor[id].pid.setPIDValues(userSettings.motorPIDp , userSettings.motorPIDi, 0);
 		RPMSetpoint = motor[id].desiredRPM;
-
-		printf( "toerental%d: %d\r\n", id, RPMSetpoint);
-		
 		motor[id].pid.setDesiredValue(RPMSetpoint);
+
 		if (RPMSetpoint == 0) {
 			setPWMpercent(PWMchannelList[id], 0);
 			motor[id].actualRPM =  getRPM(id); 
@@ -264,7 +184,6 @@ void motorControlTask(void *pvParameters) {
 					}
 				}
 				printf("stabiliseren %d: %d %d\r\n", (int)id, n + 1, getRPM(id));
-			
 			}
 
 			for (int n = 0; n < 10; n++) {
@@ -275,9 +194,10 @@ void motorControlTask(void *pvParameters) {
 					setpointPWM++;
 				setPWMpercent(PWMchannelList[id], setpointPWM);
 				printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM) ;
-				motor[id].actualRPM = getRPM(id); // for CGI
+				motor[id].actualRPM = getAVGRPM(id); // for CGI
 			}
 			xLastWakeTime = xTaskGetTickCount();
+		
 			if ( motor[id].actualRPM == 0) {
 				ESP_LOGE(TAG, "Geen toerental");
 				motor[id].status = MOTOR_FAIL;
@@ -285,10 +205,9 @@ void motorControlTask(void *pvParameters) {
 			else
 				motor[id].status = MOTOR_OK;
 
-
 		// control loop running 
-			while ((motor[id].desiredRPM != 0) && ! forceNewCalibration) {
-				forceNewCalibration = false;
+			while (motor[id].desiredRPM != 0)  {
+				
 				xTaskDelayUntil(&xLastWakeTime, PID_INTERVAL / portTICK_PERIOD_MS);
 				
 				motor[id].pid.setImaxImin(userSettings.motorPIDmaxI,-userSettings.motorPIDmaxI );  // in case these were changed
@@ -312,6 +231,8 @@ void motorControlTask(void *pvParameters) {
 		}
 	} while (1);
 }
+
+
 // CGI 
 
 const CGIdesc_t motorInfoDescriptorTable[] = {

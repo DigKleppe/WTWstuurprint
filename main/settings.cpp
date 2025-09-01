@@ -54,7 +54,7 @@ userSettings_t userSettingsDefaults = {
 	0,
 	100,
 	{ 5, 50, 100 },
-	{{12,67,true}, {12,67,true}},
+	{{10,67,false}, {10,67,false}},
 	0.04,
 	0.02,
 	30,
