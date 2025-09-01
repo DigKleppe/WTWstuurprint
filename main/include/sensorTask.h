@@ -6,6 +6,8 @@
 #define _ERRORVALUE         9999 
 int getRTMeasValuesScript(char *pBuffer, int count);
 int getSensorInfoScript(char *pBuffer, int count);
+int getSensorStatusScript(char *pBuffer, int count);
+
 
 void sensorTask(void *pvParameters);
 

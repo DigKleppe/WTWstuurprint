@@ -319,6 +319,22 @@ int getSensorInfoScript(char *pBuffer, int count) {
 	return 0;
 }
 
+int getSensorStatusScript(char *pBuffer, int count) {
+	int len = 0;
+	switch (scriptState) {
+	case 0:
+		scriptState++;
+		for (int idx = 0; idx < NR_SENSORS; idx++) {
+			len += sprintf(pBuffer + len, "S%d,", idx );
+			len += sprintf(pBuffer + len, "%d,", (int)sensorInfo[idx].status);
+			len += sprintf(pBuffer + len, "%u", (unsigned int)sensorInfo[idx].messageCntr);
+		}
+		return len;
+	default:
+		break;
+	}
+	return 0;
+}
 
 
 // int getInfoValuesScript(char *pBuffer, int count) {
