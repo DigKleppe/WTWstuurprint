@@ -90,9 +90,9 @@ const char* startCGIscript(int iIndex, char *pcParam) {
 	return ("/CGIreturn.txt");
 }
 
-int readActionScript(char *pcParam, const CGIdesc_t *CGIdescTable, int size) {
+int readActionScript(char *pcParam, const CGIdesc_t *CGIdescTable) {
 	int n;
-	int m;
+	int idx;
 	int len;
 	int tableItem = -1;
 
@@ -104,7 +104,7 @@ int readActionScript(char *pcParam, const CGIdesc_t *CGIdescTable, int size) {
 		return false;
 
 	printf("%s\n", pcParam);
-	char name[20];
+	char name[30];
 	do {
 		success = false;
 		len = strlen(p);
@@ -112,7 +112,10 @@ int readActionScript(char *pcParam, const CGIdesc_t *CGIdescTable, int size) {
 			if (p[n] == '=') {
 				strncpy(name, p, n);
 				name[n] = 0;
-				for (m = 0; m < size; m++) {
+			//	for (m = 0; m < size; m++) {
+				idx = 0;
+				while(( CGIdescTable->name != NULL) && !success )
+				{
 					if (strcmp(name, CGIdescTable->name) == 0) { // found
 						if (p[n + 1] != '&') { // empty value
 							switch (CGIdescTable->type) {
@@ -141,11 +144,11 @@ int readActionScript(char *pcParam, const CGIdesc_t *CGIdescTable, int size) {
 							}
 						}
 						success = true;
-						tableItem = m;
+						tableItem = idx;
 		 				break;
 					}
 					CGIdescTable++;
-				
+					idx++;
 				}
 				break;
 			}

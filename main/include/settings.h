@@ -18,7 +18,7 @@
 
 #define MAX_STRLEN 32
 #define USERSETTINGS_CHECKSTR "test"
-#define ADVUSERSETTINGS_CHECKSTR "test"
+#define ADVUSERSETTINGS_CHECKSTR "test2"
 
 typedef struct {
 	char moduleName[MAX_STRLEN + 1];
@@ -42,6 +42,7 @@ typedef struct {
 	float motorPIDp;
 	float motorPIDi;
 	int motorPIDmaxI;
+	int rpmAVGS;
 	float buitenTemperatuurOffset;
 	float binnenTemperatuurOffset;
 	int fixedIPdigit;
@@ -67,6 +68,7 @@ extern "C" {
 esp_err_t saveSettings(void);
 esp_err_t loadSettings(void);
 void setUserDefaults(void);
+void setAdvDefaults(void);
 
 #ifdef __cplusplus
 }

@@ -33,17 +33,27 @@ const CGIdesc_t writeVarDescriptorTable[] = {
 	{"Aantal sensoren", &userSettings.nrSensors, INT, 1},
 	{"Min buitentemperatuur bypass", &userSettings.MinBuitenTemperatuurbypass, INT, 1},
 	{"Max binnentemperatuur bypass", &userSettings.MaxBuitenTemperatuurbypass, INT, 1},
-	{"CO2 PID P waarde", &advSettings.CO2PIDp, FLT, 1},
-	{"CO2 PID I waarde", &advSettings.CO2PIDi, FLT, 1},
-	{"CO2 PID Imax waarde", &advSettings.CO2PIDmaxI, INT, 1},
-	{"Motor PID P waarde", &advSettings.motorPIDp, FLT, 1},
-	{"Motor PID I waarde", &advSettings.motorPIDi, FLT, 1},
-	{"Motor PID Imax waarde", &advSettings.motorPIDmaxI, INT, 1},
+	{NULL, NULL, INT, 1},
+};
+
+const CGIdesc_t advancedWriteVarDescriptorTable[] = {
+	{"CO2 PID P", &advSettings.CO2PIDp, FLT, 1},
+	{"CO2 PID I", &advSettings.CO2PIDi, FLT, 1},
+	{"CO2 PID Imax", &advSettings.CO2PIDmaxI, INT, 1},
+	{"Motor PID P", &advSettings.motorPIDp, FLT, 1},
+	{"Motor PID I", &advSettings.motorPIDi, FLT, 1},
+	{"Motor PID Imax", &advSettings.motorPIDmaxI, INT, 1},
+	{"RPM avgs", &advSettings.rpmAVGS, INT, 1},
+	{"Toevoermotor PWM min", &advSettings.motorSettings[TFAN].minPWM,  INT, 1},
+	{"Toevoermotor PWM max", &advSettings.motorSettings[TFAN].maxPWM,  INT, 1},
+	{"Afvoermotor PWM min", &advSettings.motorSettings[AFAN].minPWM,  INT, 1},
+	{"Afvoermotor PWM max", &advSettings.motorSettings[AFAN].maxPWM,  INT, 1},
 	{"Offset buitentemperatuur", &advSettings.buitenTemperatuurOffset, FLT, 1},
 	{"Offset binnentemperatuur", &advSettings.binnenTemperatuurOffset, FLT, 1},
 	{"Laaste IPdigit",&advSettings.fixedIPdigit, INT, 1}, 
 	{NULL, NULL, INT, 1},
 };
+
 
 const CGIdesc_t commonInfoTable[] = {
 	{"firmwareversie", (void *)firmWareVersion, STR, 1},
@@ -98,6 +108,24 @@ int getSettingsScript(char *pBuffer, int count) {
 	return 0;
 }
 
+int getAdvSettingsScript(char *pBuffer, int count) {
+	int len = 0;
+	switch (scriptState) {
+	case 0:
+		scriptState++;
+		len = sprintf(pBuffer, "Parameter, Waarde,Stel in\n");
+		len += getCGItable(advancedWriteVarDescriptorTable, pBuffer + len, count);
+		return len;
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+
+
+
 int getCommonInfoScript(char *pBuffer, int count) {
 	int len = 0;
 	switch (scriptState) {
@@ -144,6 +172,12 @@ int setUserDefaultsScript(char *pBuffer, int count) {
 	return 0;
 }
 
+int setAdvUserDefaultsScript(char *pBuffer, int count) {
+	setAdvDefaults();
+	return 0;
+}
+
+
 int checkUpdatesScript(char *pBuffer, int count) {
 	forceUpdate = true;
 	return 0;
@@ -152,17 +186,20 @@ int checkUpdatesScript(char *pBuffer, int count) {
 int forgetWifiScript(char *pBuffer, int count) {
 	strcpy(wifiSettings.SSID, ESP_WIFI_SSID);  // Asus test router
 	strcpy(wifiSettings.pwd, ESP_WIFI_PASS);
+	wifiSettings.gw = (esp_ip4_addr_t) 0;
 	saveSettings();
 	esp_restart();
 	return 0;
 }
 
-#define NRWRITEVARDESCRIPTORS (sizeof(writeVarDescriptorTable) / sizeof(CGIdesc_t))
 
 void parseCGIWriteData(char *buf, int received) {
 	bool save = false;
 	if (strncmp(buf, "setVal:", 7) == 0) { // values are written , in sensirionTasks write these to SCD30
-		if (readActionScript(&buf[7], writeVarDescriptorTable, NRWRITEVARDESCRIPTORS) >= 0) {
+		if (readActionScript(&buf[7], writeVarDescriptorTable) >= 0) {
+			save = true;
+		}
+		if (readActionScript(&buf[7], advancedWriteVarDescriptorTable) >= 0) {
 			save = true;
 		}
 	}

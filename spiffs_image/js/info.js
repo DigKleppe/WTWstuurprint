@@ -7,13 +7,6 @@ function init() {
 	setInterval(function() { timer() }, 1000);
 }
 
-function forgetWifi() {
-	getItem("forgetWifi");
-}
-
-function checkUpdates () {
-	getItem( "checkUpdates");
-}
 
 function timer() {
 	if (document.visibilityState == "hidden")

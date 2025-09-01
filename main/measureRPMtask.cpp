@@ -42,8 +42,8 @@ static uint32_t TIMERFREQ = 10 * 1000 * 1000;
 static int PRMTIMEOUT =  20; // * 10ms 
 
 static gptimer_handle_t gptimer;
-static Averager AVaverager(16);
-static Averager TVaverager(16);
+static Averager AVaverager(8);
+static Averager TVaverager(8);
 
 static Averager AVaverager2(256);
 static Averager TVaverager2(256);
@@ -185,4 +185,9 @@ int getAVGRPM(motorID_t id) {
 		else
 			return 0;
 	}
+}
+
+void setRPMAverages ( int avgs) {
+	AVaverager.setAverages( avgs);
+	TVaverager.setAverages( avgs);
 }
