@@ -43,8 +43,6 @@ extern int scriptState;
 static motor_t motor[2];
 static bool PWMisInitialized;
 
-static bool forceNewCalibration; 
-
 const int MAXDUTYCYCLE = ((2 << (LEDC_DUTY_RES - 1)) - 1);
 
 // using ledc peripheral for PWM
@@ -150,10 +148,10 @@ void motorControlTask(void *pvParameters) {
 	//  	vTaskDelay(100);
 
 	do {
-		maxPWM = userSettings.motorSettings[id].maxPWM;
-		minPWM = userSettings.motorSettings[id].minPWM;
-		motor[id].pid.setImaxImin(userSettings.motorPIDmaxI,-userSettings.motorPIDmaxI );
-		motor[id].pid.setPIDValues(userSettings.motorPIDp , userSettings.motorPIDi, 0);
+		maxPWM = advSettings.motorSettings[id].maxPWM;
+		minPWM = advSettings.motorSettings[id].minPWM;
+		motor[id].pid.setImaxImin(advSettings.motorPIDmaxI,-advSettings.motorPIDmaxI );
+		motor[id].pid.setPIDValues(advSettings.motorPIDp , advSettings.motorPIDi, 0);
 		RPMSetpoint = motor[id].desiredRPM;
 		motor[id].pid.setDesiredValue(RPMSetpoint);
 
@@ -210,8 +208,8 @@ void motorControlTask(void *pvParameters) {
 				
 				xTaskDelayUntil(&xLastWakeTime, PID_INTERVAL / portTICK_PERIOD_MS);
 				
-				motor[id].pid.setImaxImin(userSettings.motorPIDmaxI,-userSettings.motorPIDmaxI );  // in case these were changed
-				motor[id].pid.setPIDValues(userSettings.motorPIDp , userSettings.motorPIDi, 0);
+				motor[id].pid.setImaxImin(advSettings.motorPIDmaxI,-advSettings.motorPIDmaxI );  // in case these were changed
+				motor[id].pid.setPIDValues(advSettings.motorPIDp , advSettings.motorPIDi, 0);
 				RPMSetpoint = motor[id].desiredRPM;
 				motor[id].pid.setDesiredValue(RPMSetpoint);
 
@@ -237,103 +235,14 @@ void motorControlTask(void *pvParameters) {
 
 const CGIdesc_t motorInfoDescriptorTable[] = {
 	{"Afvoermotor toerental(RPM)", &motor[AFAN].actualRPM , INT, 1 },
-	{"Afvoermotor minPWM (%)", &userSettings.motorSettings[AFAN].minPWM , INT, 1},
-	{"Afvoermotor maxPWM (%)", &userSettings.motorSettings[AFAN].maxPWM, INT, 1 },
+	{"Afvoermotor minPWM (%)", &advSettings.motorSettings[AFAN].minPWM , INT, 1},
+	{"Afvoermotor maxPWM (%)", &advSettings.motorSettings[AFAN].maxPWM, INT, 1 },
 	{"Toevoermotor toerental(RPM)", &motor[TFAN].actualRPM, INT, 1},
-	{"Toevoermotor minPWM (%)", &userSettings.motorSettings[TFAN].minPWM, INT, 1 },
-	{"Toevoermotor maxPWM (%)", &userSettings.motorSettings[TFAN].maxPWM, INT, 1 },
+	{"Toevoermotor minPWM (%)", &advSettings.motorSettings[TFAN].minPWM, INT, 1 },
+	{"Toevoermotor maxPWM (%)", &advSettings.motorSettings[TFAN].maxPWM, INT, 1 },
 	{NULL, NULL, FLT,1},
 };
 
-int resetFanLimitsScript(char *pBuffer, int count)  {
-	int len = 0;
-	switch (scriptState) {
-	case 0:
-		scriptState++;
-		userSettings.motorSettings[TFAN].isCalibrated = false;
-		userSettings.motorSettings[AFAN].isCalibrated = false;
-		forceNewCalibration = true;
-
-		len = sprintf(pBuffer, "OK\n");
-		return len;
-		break;
-	default:
-		break;
-	}
-	return 0;
-}
 motorStatus_t getMotorStatus ( motorID_t id) {
 	return motor[id].status;
 }
-
-
-
-// extern "C" void app_main(void) {
-// 	int state = 0;
-// 	int delay = 0;
-// 	int old = -1;
-// 	esp_err_t err = nvs_flash_init();
-// 	if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-// 		ESP_ERROR_CHECK(nvs_flash_erase());
-// 		err = nvs_flash_init();
-// 		ESP_LOGI(TAG, "nvs flash erased");
-// 	}
-// 	ESP_ERROR_CHECK(err);
-
-// 	err = init_spiffs();
-// 	if (err != ESP_OK) {
-// 		ESP_LOGE(TAG, "Failed to initialize SPIFFS (%s)", esp_err_to_name(err));
-// 		return;
-// 	}
-
-// 	err = loadSettings();
-// 	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, NULL);
-// 	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, NULL);
-// 	while (1) {
-// 		vTaskDelay(10000);
-
-// 		state++;
-// 		switch (state) {
-// 		case 3:
-// 			motor[AFAN].desiredRPM = 1000;
-// 			break;
-// 		case 6:
-// 			motor[AFAN].desiredRPM = 1200;
-// 			break;
-
-// 		case 10:
-// 			state--;
-// 			if (delay) {
-// 				delay--;
-// 			} else {
-// 				delay = 10;
-// 				motor[AFAN].desiredRPM += 100;
-// 				if (motor[AFAN].desiredRPM > MAXRPM) {
-// 					state++;
-// 					motor[AFAN].desiredRPM = 2000;
-// 					delay = 0;
-// 				}
-// 			}
-// 			break;
-
-// 		case 20:
-// 			if (delay) {
-// 				delay--;
-// 			} else {
-// 				delay = 10;
-// 				motor[AFAN].desiredRPM -= 100;
-// 				if (motor[AFAN].desiredRPM < MINRPM) {
-// 					state = 0;
-// 					motor[AFAN].desiredRPM = 0;
-// 				}
-// 			}
-// 			break;
-// 		default:
-// 			break;
-// 		}
-// 		if (old != motor[AFAN].desiredRPM) {
-// 			printf("  ***  %d *** ", motor[AFAN].desiredRPM);
-// 			old = motor[AFAN].desiredRPM;
-// 		}
-// 	}
-// }

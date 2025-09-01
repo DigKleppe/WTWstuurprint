@@ -21,7 +21,6 @@ const tCGI CGIurls[] = {
 	{"/cgi-bin/getCommonInfo", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getCommonInfoScript},
 	{"/cgi-bin/getSettings", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getSettingsScript},
 	{"/cgi-bin/getFanInfo", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)getFanInfoScript},
-	{"/cgi-bin/resetFanLimits", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)resetFanLimitsScript},
 	{"/cgi-bin/clearLog", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)clearLogScript},
 	{"/cgi-bin/setUserDefaults", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)setUserDefaultsScript},
 	{"/cgi-bin/checkUpdates", (tCGIHandler_t)readCGIvalues, (CGIresponseFileHandler_t)checkUpdatesScript},

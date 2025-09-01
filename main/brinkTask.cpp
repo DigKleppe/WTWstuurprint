@@ -83,8 +83,8 @@ void brinkTask(void *pvParameters) {
 		tempRPMafvoer = 0;
 
 	//	pid.setImaxImin(userSettings.CO2PIDmaxI, -userSettings.CO2PIDmaxI);
-		pid.setImaxImin(userSettings.CO2PIDmaxI, -userSettings.CO2PIDmaxI/2);
-		pid.setPIDValues(userSettings.CO2PIDp, userSettings.CO2PIDi, 0);
+		pid.setImaxImin(advSettings.CO2PIDmaxI, -advSettings.CO2PIDmaxI/2);
+		pid.setPIDValues(advSettings.CO2PIDp, advSettings.CO2PIDi, 0);
 		pid.setDesiredValue(userSettings.CO2setpoint);
 
 		bool switchIn = false;
@@ -191,19 +191,16 @@ void brinkTask(void *pvParameters) {
 		setRPMpercent(TFAN, tempRPMToevoer);
 		setRPMpercent(AFAN, tempRPMafvoer);
 
-		if ((!userSettings.motorSettings[TFAN].isCalibrated) || (!userSettings.motorSettings[AFAN].isCalibrated)) // motors on to calibrate
-			gpio_set_level(OUTPUT_BRINKON, 1);																	
-		else {
-			if ( onTimer) {
-				onTimer--;
-				gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on if needed
-			}
-			else
-				gpio_set_level(OUTPUT_BRINKON, 0); // turn power to motors off
-
-			if (tempRPMafvoer > 0)  
-				onTimer = ONTIME;
+		if ( onTimer) {
+			onTimer--;
+			gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on if needed
 		}
+		else
+			gpio_set_level(OUTPUT_BRINKON, 0); // turn power to motors off
+
+		if (tempRPMafvoer > 0)  
+				onTimer = ONTIME;
+	
 		if (udpTimer)
 			udpTimer--;
 		else {

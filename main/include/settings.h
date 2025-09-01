@@ -17,31 +17,37 @@
 #include "motorControlTask.h"
 
 #define MAX_STRLEN 32
-#define USERSETTINGS_CHECKSTR "test-4"
+#define USERSETTINGS_CHECKSTR "test"
+#define ADVUSERSETTINGS_CHECKSTR "test"
 
 typedef struct {
 	char moduleName[MAX_STRLEN + 1];
 	int CO2setpoint;
-	float CO2PIDp;
-	float CO2PIDi;
-	int CO2PIDmaxI;
 	int bathRoomFanTime;
 	int bathRoomFanMaxTime;
 	int motorSpeedMin;
 	int motorSpeedMax;
 	int fixedSpeed[3];
+	int MinBuitenTemperatuurbypass;
+	int MaxBuitenTemperatuurbypass;
+	int nrSensors;
+	char checkstr[MAX_STRLEN + 1];
+} userSettings_t;
+
+typedef struct {
+	float CO2PIDp;
+	float CO2PIDi;
+	int CO2PIDmaxI;
 	motorSettings_t motorSettings[2];
 	float motorPIDp;
 	float motorPIDi;
 	int motorPIDmaxI;
-	int MinBuitenTemperatuurbypass;
-	int MaxBuitenTemperatuurbypass;
 	float buitenTemperatuurOffset;
 	float binnenTemperatuurOffset;
-	int nrSensors;
 	int fixedIPdigit;
 	char checkstr[MAX_STRLEN + 1];
-} userSettings_t;
+} advancedSettings_t;
+
 
 typedef struct {
 	varType_t varType;
@@ -53,6 +59,7 @@ typedef struct {
 
 extern bool settingsChanged;
 extern userSettings_t userSettings;
+extern advancedSettings_t advSettings;
 
 #ifdef __cplusplus
 extern "C" {

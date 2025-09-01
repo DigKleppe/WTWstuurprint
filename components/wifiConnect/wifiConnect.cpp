@@ -235,7 +235,6 @@ static void smartconfigTask(void *parm) {
 #endif
 
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
-	static int ap_idx = 1;
 	if (doStop)
 		return;
 
@@ -322,14 +321,14 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 			ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
 			sprintf(myIpAddress, IPSTR, IP2STR(&event->ip_info.ip));
 
-			if (userSettings.fixedIPdigit > 0) { // check if the last digit of IP address = CONFIG_FIXED_LAST_IP_DIGIT
+			if (advSettings.fixedIPdigit > 0) { // check if the last digit of IP address = CONFIG_FIXED_LAST_IP_DIGIT
 				uint32_t addr = event->ip_info.ip.addr;
 
-				if ((addr & 0xFF000000) == (userSettings.fixedIPdigit << 24)) { // last ip digit(LSB) is MSB in addr
+				if ((addr & 0xFF000000) == (advSettings.fixedIPdigit << 24)) { // last ip digit(LSB) is MSB in addr
 					xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);		 // ok
 					connectStatus = IP_RECEIVED;
 				} else {
-					wifiSettings.ip4Address = (esp_ip4_addr_t)((addr & 0x00FFFFFF) + (userSettings.fixedIPdigit << 24));
+					wifiSettings.ip4Address = (esp_ip4_addr_t)((addr & 0x00FFFFFF) + (advSettings.fixedIPdigit << 24));
 					sprintf(myIpAddress, IPSTR, IP2STR(&wifiSettings.ip4Address));
 					wifiSettings.gw = event->ip_info.gw;
 					saveSettings();

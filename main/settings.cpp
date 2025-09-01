@@ -4,12 +4,12 @@
  *  Created on: Nov 30, 2017
  *      Author: dig
  */
-#include "wifiConnect.h"
 #include "settings.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
-#include "nvs_flash.h"
 #include "nvs.h"
+#include "nvs_flash.h"
+#include "wifiConnect.h"
 
 #include <string.h>
 
@@ -19,55 +19,14 @@ extern settingsDescr_t settingsDescr[];
 extern int myRssi;
 bool settingsChanged;
 
-char checkstr[MAX_STRLEN+1];
+char checkstr[MAX_STRLEN + 1];
 
-	// char moduleName[MAX_STRLEN + 1];
-	// int CO2setpoint;
-	// float CO2PIDp;
-	// float CO2PIDi;
-	// int CO2PIDmaxI;
-	// int bathRoomFanTime;
-	// int bathRoomFanMaxTime;
-	// int motorSpeedMin;
-	// int motorSpeedMax;
-	// int fixedSpeed[3];
-	// motorSettings_t motorSettings[2];
-	// float motorPIDp;
-	// float motorPIDi;
-	// int motorPIDmaxI;
-	// int MinBuitenTemperatuurbypass;
-	// int MaxBuitenTemperatuurbypass;
-	// float buitenTemperatuurOffset; 
-	// float binnenTemperatuurOffset;
-	// int nrSensors;
-	// int fixedIPdigit;
-	// char checkstr[MAX_STRLEN + 1];
+userSettings_t userSettingsDefaults = {"WTW", 1100, 15, 25, 0, 100, {5, 50, 100}, 10, 22, 1, {USERSETTINGS_CHECKSTR}};
 
-userSettings_t userSettingsDefaults = {
-	{ CONFIG_MDNS_HOSTNAME },
-	1100,
-	0.2,
-	0.01,
-	40,
-	15, 
-	25,
-	0,
-	100,
-	{ 5, 50, 100 },
-	{{10,67,false}, {10,67,false}},
-	0.04,
-	0.02,
-	30,
-	10,
-	22,
-	0,
-	0,
-	1,
-	CONFIG_FIXED_LAST_IP_DIGIT,
-	{ USERSETTINGS_CHECKSTR }
-};
+advancedSettings_t advancedSettingsDefaults = {0.2, 0.01, 40, {{10, 67, false}, {10, 67, false}}, 0.04, 0.02, 30, 0, 0, CONFIG_FIXED_LAST_IP_DIGIT, {ADVUSERSETTINGS_CHECKSTR}};
 
 userSettings_t userSettings;
+advancedSettings_t advSettings;
 
 #define STORAGE_NAMESPACE "storage"
 static const char *TAG = "Settings";
@@ -82,9 +41,9 @@ esp_err_t saveSettings(void) {
 	if (err != ESP_OK) {
 		ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
 	} else {
-		err = nvs_set_blob(my_handle, "WifiSettings",(const void *) &wifiSettings, sizeof(wifiSettings_t));
-		err |= nvs_set_blob(my_handle, "userSettings",(const void *) &userSettings, sizeof(userSettings_t));
-
+		err = nvs_set_blob(my_handle, "WifiSettings", (const void *)&wifiSettings, sizeof(wifiSettings_t));
+		err |= nvs_set_blob(my_handle, "userSettings", (const void *)&userSettings, sizeof(userSettings_t));
+		err |= nvs_set_blob(my_handle, "advSettings", (const void *)&advSettings, sizeof(advancedSettings_t));
 		switch (err) {
 		case ESP_OK:
 			ESP_LOGI(TAG, "settings written");
@@ -117,10 +76,13 @@ esp_err_t loadSettings() {
 		ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
 	} else {
 		ESP_LOGI(TAG, "reading SSID and password");
-		len =  sizeof(wifiSettings_t);
-		err = nvs_get_blob(my_handle, "WifiSettings", (void *) &wifiSettings, &len);
+		len = sizeof(wifiSettings_t);
+		err = nvs_get_blob(my_handle, "WifiSettings", (void *)&wifiSettings, &len);
 		len = sizeof(userSettings_t);
-		err |= nvs_get_blob(my_handle, "userSettings",(void *) &userSettings, &len);
+		err |= nvs_get_blob(my_handle, "userSettings", (void *)&userSettings, &len);
+		len = sizeof(advancedSettings_t);
+		err |= nvs_get_blob(my_handle, "advSettings",(void *) &advSettings, &len);
+
 		switch (err) {
 		case ESP_OK:
 			ESP_LOGI(TAG, "SSID: %s", wifiSettings.SSID);
@@ -134,20 +96,25 @@ esp_err_t loadSettings() {
 		nvs_close(my_handle);
 	}
 
-/*	if (strcmp(wifiSettings.upgradeFileName, CONFIG_FIRMWARE_UPGRADE_FILENAME) != 0) {
-		strcpy(wifiSettings.upgradeFileName, CONFIG_FIRMWARE_UPGRADE_FILENAME);
-		doSave = true;  // set filename for OTA via factory firmware
-	}*/
+	/*	if (strcmp(wifiSettings.upgradeFileName, CONFIG_FIRMWARE_UPGRADE_FILENAME) != 0) {
+			strcpy(wifiSettings.upgradeFileName, CONFIG_FIRMWARE_UPGRADE_FILENAME);
+			doSave = true;  // set filename for OTA via factory firmware
+		}*/
 
-	if(strncmp(userSettings.checkstr,USERSETTINGS_CHECKSTR, strlen (USERSETTINGS_CHECKSTR) )	!= 0)
-	{
+	if (strncmp(userSettings.checkstr, USERSETTINGS_CHECKSTR, strlen(USERSETTINGS_CHECKSTR)) != 0) {
 		userSettings = userSettingsDefaults;
 		wifiSettings = wifiSettingsDefaults;
 		ESP_LOGE(TAG, "default usersettings loaded");
-		doSave = true;  // set filename for OTA via factory firmware
+		doSave = true;
 	}
 
-	if ( doSave)
+	if (strncmp(advSettings.checkstr, ADVUSERSETTINGS_CHECKSTR, strlen(ADVUSERSETTINGS_CHECKSTR)) != 0) {
+		advSettings = advancedSettingsDefaults;
+		ESP_LOGE(TAG, "default advanced settings loaded");
+		doSave = true;
+	}
+
+	if (doSave)
 		return saveSettings();
 	else {
 		ESP_LOGI(TAG, "usersettings loaded");
@@ -160,7 +127,4 @@ void setUserDefaults(void) {
 	ESP_LOGI(TAG, "usersettings defaults");
 	saveSettings();
 }
-
-
 }
-
