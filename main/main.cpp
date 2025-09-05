@@ -104,7 +104,7 @@ extern "C" void app_main() {
  
 	while (1) {
 		vTaskDelay(pdMS_TO_TICKS(20)); //
-		keysTimerHandler_ms(pdMS_TO_TICKS(20));
+		keysTimerHandler_ms(20);
 		
 		time(&now);
 		localtime_r(&now, &timeinfo);

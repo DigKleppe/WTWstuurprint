@@ -4,6 +4,6 @@
 
 void measureRPMtask(void *pvParameters);
 int getRPM( motorID_t id);
-int getAVGRPM(motorID_t id);
+//int getAVGRPM(motorID_t id);
 void setRPMAverages ( int avgs); 
 #endif

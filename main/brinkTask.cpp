@@ -51,8 +51,6 @@ int overrideTimer;
 
 extern int scriptState;
 
-
-
 // als aanvoertemperatuur < 0 wordt de aanvoer beperkt en een onbalans gecreeerd
 // bij - 20 maximale onbalans
 int antifreeze(int percent) {

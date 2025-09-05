@@ -136,19 +136,19 @@ void motorControlTask(void *pvParameters) {
 	if (!PWMisInitialized) {
 		PWMisInitialized = true;
 		PWMinit();
-		xTaskCreate(measureRPMtask, "measureRPM", 8000, NULL, 1, NULL);
+		xTaskCreate(measureRPMtask, "measureRPM", 8000, NULL, configMAX_PRIORITIES - 1, NULL);
 	}
 
 	// setPWMpercent(PWMchannelList[id], 15 + (id * 10));
 
-//		gpio_set_level(GPIO_NUM_15, 1); // turn power to motors on if needed
-// while(1) {
-// 	  	vTaskDelay(10);
-// 		control = advSettings.motorSettings[id].minPWM;
-// 		setPWMpercent(PWMchannelList[id], control);
-// 		motor[id].actualRPM = getRPM(id);
-// 		printf(">RPM%d:%d,AVG%d:%d\r\n", (int)id, getRPM(id), (int)id, getAVGRPM(id));
-// }
+	//		gpio_set_level(GPIO_NUM_15, 1); // turn power to motors on if needed
+	// while(1) {
+	// 	  	vTaskDelay(10);
+	// 		control = advSettings.motorSettings[id].minPWM;
+	// 		setPWMpercent(PWMchannelList[id], control);
+	// 		motor[id].actualRPM = getRPM(id);
+	// 		printf(">RPM%d:%d,AVG%d:%d\r\n", (int)id, getRPM(id), (int)id, getAVGRPM(id));
+	// }
 
 	do {
 		maxPWM = advSettings.motorSettings[id].maxPWM;
@@ -197,7 +197,7 @@ void motorControlTask(void *pvParameters) {
 				setPWMpercent(PWMchannelList[id], setpointPWM);
 				motor[id].actualPWM = setpointPWM;
 				printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM);
-				motor[id].actualRPM = getAVGRPM(id); // for CGI
+				motor[id].actualRPM = getRPM(id); // for CGI
 			}
 			xLastWakeTime = xTaskGetTickCount();
 
@@ -209,7 +209,6 @@ void motorControlTask(void *pvParameters) {
 
 			// control loop running
 			while (motor[id].desiredRPM != 0) {
-
 				if (oldRPMavgs != advSettings.rpmAVGS) {
 					oldRPMavgs = advSettings.rpmAVGS;
 					setRPMAverages(advSettings.rpmAVGS);
@@ -226,9 +225,9 @@ void motorControlTask(void *pvParameters) {
 				control = motor[id].pid.update(getRPM(id)) + setpointPWM;
 				if (control < minPWM)
 					control = minPWM;
-				motor[id].actualPWM = control;
 
-				printf(">AV,PID%d:%1.1f,RPM%d:%d,AVG%d:%d\r\n", (int)id, control, (int)id, getRPM(id), (int)id, getAVGRPM(id));
+				motor[id].actualPWM = control;
+				printf(">AV,PID%d:%1.1f,RPM%d:%d\r\n", (int)id, control, (int)id, getRPM(id));
 				//	printf("AV%d, %2.2f PID: %1.1f RPM:%d \n", (int)id, control, control - setpointPWM, getRPM(id));
 				setPWMpercent(PWMchannelList[id], control);
 				motor[id].actualRPM = getRPM(id);
@@ -252,8 +251,6 @@ const CGIdesc_t motorInfoDescriptorTable[] = {
 	{"Toevoermotor PWM", &motor[TFAN].actualPWM, FLT, 1},
 	{"Toevoermotor minPWM (%)", &advSettings.motorSettings[TFAN].minPWM, INT, 1},
 	{"Toevoermotor maxPWM (%)", &advSettings.motorSettings[TFAN].maxPWM, INT, 1},
-
-
 	{NULL, NULL, FLT, 1},
 };
 

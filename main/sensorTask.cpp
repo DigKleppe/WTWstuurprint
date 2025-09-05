@@ -193,7 +193,7 @@ void sensorTask(void *pvParameters) {
 				}
 			}
 			tempLog.maxCO2 = getMaXCOValue();
-			tempLog.RPM = getAVGRPM(AFAN);
+			tempLog.RPM = getRPM(AFAN);
 			lastVal = tempLog;
 			lastVal.timeStamp = timeStamp;
 			if (logPrescaler > 0) {
