@@ -43,7 +43,6 @@ const CGIdesc_t advancedWriteVarDescriptorTable[] = {
 	{"Motor PID P", &advSettings.motorPIDp, FLT, 1},
 	{"Motor PID I", &advSettings.motorPIDi, FLT, 1},
 	{"Motor PID Imax", &advSettings.motorPIDmaxI, INT, 1},
-	{"RPM avgs", &advSettings.rpmAVGS, INT, 1},
 	{"Afvoermotor PWM min", &advSettings.motorSettings[AFAN].minPWM,  INT, 1},
 	{"Afvoermotor PWM max", &advSettings.motorSettings[AFAN].maxPWM,  INT, 1},
 	{"Toevoermotor PWM min", &advSettings.motorSettings[TFAN].minPWM,  INT, 1},

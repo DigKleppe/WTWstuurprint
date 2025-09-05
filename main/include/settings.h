@@ -42,7 +42,6 @@ typedef struct {
 	float motorPIDp;
 	float motorPIDi;
 	int motorPIDmaxI;
-	int rpmAVGS;
 	float buitenTemperatuurOffset;
 	float binnenTemperatuurOffset;
 	int fixedIPdigit;

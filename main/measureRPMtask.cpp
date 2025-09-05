@@ -10,15 +10,11 @@
  *
  */
 
-#include "averager.h"
-
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
 #include "motorControlTask.h"
-
 // #include "esp_err.h"
 // #include "esp_log.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -31,6 +27,8 @@
 #define ATACHO_PIN GPIO_NUM_17
 #define TTACHO_PIN GPIO_NUM_21
 
+#define TP_PIN GPIO_NUM_33 // pin 3 J2
+
 static uint32_t Acntr; // for timeouts
 static uint32_t Tcntr; // for timeouts
 static uint32_t AtmrVal;
@@ -39,52 +37,52 @@ static uint32_t AtimeoutTmr;
 static uint32_t TtimeoutTmr;
 
 static uint32_t TIMERFREQ = 10 * 1000 * 1000;
-static int PRMTIMEOUT =  20; // * 10ms 
+static int PRMTIMEOUT = 20; // * 10ms
+
+static int DEBOUNCES = 200;
 
 static gptimer_handle_t gptimer;
-static Averager AVaverager(3);
-static Averager TVaverager(3);
 
+
+static uint32_t RPMtoevoer, RPMAfvoer;
 
 static void IRAM_ATTR gpio_isr_handler(void *arg) {
 	uint64_t newTmrVal;
 	static uint64_t oldTmrVal;
-	static uint32_t fistHalf;
-	static bool first = true;
 
-	gptimer_get_raw_count(gptimer, &newTmrVal);
-	if (newTmrVal > oldTmrVal) { // skip if timer overflowed
-		if (first) {
-			fistHalf = newTmrVal - oldTmrVal;
-			first = false;
-		}
-		else {
-			first = true;
-			TtmrVal = newTmrVal - oldTmrVal + fistHalf;
+	uint32_t level = 0;
+	//	gpio_set_level(TP_PIN, 1);
+	for (int n = 0; n < DEBOUNCES; n++) {
+		if (gpio_get_level(TTACHO_PIN) == 1)
+			level++;
+	}
+	if (level < (DEBOUNCES / 4)) // skip erronouns IRQ on positive egde
+	{
+		gptimer_get_raw_count(gptimer, &newTmrVal);
+		if (newTmrVal > oldTmrVal) { // skip if timer overflowed
+			TtmrVal = newTmrVal - oldTmrVal;
 			Tcntr++;
-		}	
+		}
 		oldTmrVal = newTmrVal;
+		//		gpio_set_level(TP_PIN, 0);
 	}
 }
 
 static void IRAM_ATTR Agpio_isr_handler(void *arg) {
 	uint64_t newTmrVal;
 	static uint64_t oldTmrVal;
-	static uint32_t fistHalf;
-	static bool first = true;
-
-	gptimer_get_raw_count(gptimer, &newTmrVal);
-
-	if (newTmrVal > oldTmrVal) { // skip if timer overflowed
-		if (first) {
-			fistHalf = newTmrVal - oldTmrVal;
-			first = false;
-		}
-		else {
-			first = true;
-			AtmrVal = newTmrVal - oldTmrVal + fistHalf;
+	uint32_t level = 0;
+	for (int n = 0; n < DEBOUNCES; n++) {
+		if (gpio_get_level(ATACHO_PIN) == 1)
+			level++;
+	}
+	if (level < (DEBOUNCES / 4)) // skip erronouns IRQ on positive egde
+	{
+		gptimer_get_raw_count(gptimer, &newTmrVal);
+		if (newTmrVal > oldTmrVal) { // skip if timer overflowed
+			AtmrVal = newTmrVal - oldTmrVal;
 			Acntr++;
-		}	
+		}
 		oldTmrVal = newTmrVal;
 	}
 }
@@ -109,15 +107,14 @@ int toRPM(uint32_t timerVal) {
 		return -1;
 }
 
-int AVskip; // test
-int TVskip;
 void measureRPMtask(void *pvParameters) {
 	// int gpioNum;
 	uint32_t oldAcntr = 0;
 	uint32_t oldTcntr = 0;
-	uint32_t temp= 0;
 
 	printf("measureRPMtask started\r\n");
+
+//	gpio_set_direction(TP_PIN, GPIO_MODE_OUTPUT); // testpoint
 
 	timerInit();
 	gpio_set_direction(ATACHO_PIN, GPIO_MODE_INPUT);
@@ -126,22 +123,19 @@ void measureRPMtask(void *pvParameters) {
 	gpio_install_isr_service(1 << 3);
 	gpio_isr_handler_add(TTACHO_PIN, gpio_isr_handler, NULL);
 	gpio_isr_handler_add(ATACHO_PIN, Agpio_isr_handler, NULL);
-	gpio_set_intr_type(TTACHO_PIN, GPIO_INTR_ANYEDGE); // both edgdes
-	gpio_set_intr_type(ATACHO_PIN, GPIO_INTR_ANYEDGE);
+	gpio_set_intr_type(TTACHO_PIN, GPIO_INTR_NEGEDGE);
+	gpio_set_intr_type(ATACHO_PIN, GPIO_INTR_NEGEDGE);
 
 	while (1) {
 		if (oldAcntr != Acntr) {
 			if (AtimeoutTmr != 0) { // skip first value after timeout
-				temp = toRPM(AtmrVal);
-				if ((temp > 0) && (temp < MAXRPM + 500)) { // skip spike
-					AVaverager.write(temp);
-				} else
-					AVskip++;
+				RPMAfvoer = toRPM(AtmrVal);
 			}
+
 			AtimeoutTmr = PRMTIMEOUT;
 			oldAcntr = Acntr;
-			printf(">RPMA:%d\r\n",(int) AVaverager.average());
-		//	printf("AV Counter: %5u  RPM: %d\r\n", (int)AtmrVal, (int)temp);
+			//	printf(">RPMA:%d\r\n",(int) AVaverager.average());
+			//	printf("AV Counter: %5u  RPM: %d\r\n", (int)AtmrVal, (int)temp);
 
 		} else {
 			if (AtimeoutTmr > 0) {
@@ -150,14 +144,9 @@ void measureRPMtask(void *pvParameters) {
 		}
 		if (oldTcntr != Tcntr) {
 			if (TtimeoutTmr != 0) { // skip first value after timeout
-				temp = toRPM(TtmrVal);
-				if ((temp > 0) && (temp < MAXRPM + 500)) { // skip spike
-					TVaverager.write(temp);
-				} else
-					TVskip++;
+				RPMtoevoer = toRPM(TtmrVal);
 			}
-			printf(">RPMT:%d\r\n", (int) TVaverager.average());
-		//	printf("TV Counter: %5u  RPM: %d\r\n", (int)TtmrVal, (int)temp);
+			//	printf("TV Counter: %5u  RPM: %d\r\n", (int)TtmrVal, (int)temp);
 			TtimeoutTmr = PRMTIMEOUT;
 			oldTcntr = Tcntr;
 
@@ -173,18 +162,14 @@ void measureRPMtask(void *pvParameters) {
 int getRPM(motorID_t id) {
 	if (id == TFAN) {
 		if (TtimeoutTmr > 0)
-			return (int)TVaverager.average();
+			return (int)RPMtoevoer;
 		else
 			return 0;
 	} else {
 		if (AtimeoutTmr > 0)
-			return (int)AVaverager.average();
+			return (int)RPMAfvoer;
 		else
 			return 0;
 	}
 }
 
-void setRPMAverages ( int avgs) {
-	AVaverager.setAverages( avgs);
-	TVaverager.setAverages( avgs);
-}

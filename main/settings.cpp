@@ -23,7 +23,7 @@ char checkstr[MAX_STRLEN + 1];
 
 userSettings_t userSettingsDefaults = {"WTW", 1100, 15, 25, 0, 100, {5, 50, 100}, 10, 22, 1, {USERSETTINGS_CHECKSTR}};
 
-advancedSettings_t advancedSettingsDefaults = {0.2, 0.01, 40, {{14, 67}, {14, 67}}, 0.04, 0.02, 30,16, 0, 0, CONFIG_FIXED_LAST_IP_DIGIT, {ADVUSERSETTINGS_CHECKSTR}};
+advancedSettings_t advancedSettingsDefaults = {0.2, 0.01, 40, {{14, 67}, {14, 67}}, 0.04, 0.02, 30, 0, 0, CONFIG_FIXED_LAST_IP_DIGIT, {ADVUSERSETTINGS_CHECKSTR}};
 
 userSettings_t userSettings;
 advancedSettings_t advSettings;

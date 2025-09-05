@@ -129,8 +129,6 @@ void motorControlTask(void *pvParameters) {
 	int maxPWM;
 	int lastRPM = MAXRPM;
 	int RPMSetpoint;
-	int oldRPMavgs = 0;
-
 	TickType_t xLastWakeTime;
 
 	if (!PWMisInitialized) {
@@ -209,10 +207,6 @@ void motorControlTask(void *pvParameters) {
 
 			// control loop running
 			while (motor[id].desiredRPM != 0) {
-				if (oldRPMavgs != advSettings.rpmAVGS) {
-					oldRPMavgs = advSettings.rpmAVGS;
-					setRPMAverages(advSettings.rpmAVGS);
-				}
 				maxPWM = advSettings.motorSettings[id].maxPWM;
 				minPWM = advSettings.motorSettings[id].minPWM;
 				motor[id].pid.setImaxImin(advSettings.motorPIDmaxI, -advSettings.motorPIDmaxI); // in case these were changed
@@ -228,6 +222,7 @@ void motorControlTask(void *pvParameters) {
 
 				motor[id].actualPWM = control;
 				printf(">AV,PID%d:%1.1f,RPM%d:%d\r\n", (int)id, control, (int)id, getRPM(id));
+
 				//	printf("AV%d, %2.2f PID: %1.1f RPM:%d \n", (int)id, control, control - setpointPWM, getRPM(id));
 				setPWMpercent(PWMchannelList[id], control);
 				motor[id].actualRPM = getRPM(id);
