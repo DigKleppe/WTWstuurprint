@@ -122,9 +122,9 @@ void brinkTask(void *pvParameters) {
 
 		if (bathRoomMaxTimer > 0) {
 			bathRoomMaxTimer--;
-			if (bathRoomMaxTimer == 0)
-				manualLevel = 0; // forgot to switch off SB2 SB3
 		}
+		if (bathRoomMaxTimer == 0)
+			manualLevel = 0; // forgot to switch off SB2 SB3
 
 		if (keysRT & SK2) // keuken
 			if(bathRoomTimer <= 0)
@@ -188,7 +188,10 @@ void brinkTask(void *pvParameters) {
 		}
 		setRPMpercent(TFAN, tempRPMToevoer);
 		setRPMpercent(AFAN, tempRPMafvoer);
-
+	
+		if (tempRPMafvoer > 0)  
+			onTimer = ONTIME;
+	
 		if ( onTimer) {
 			onTimer--;
 			gpio_set_level(OUTPUT_BRINKON, 1); // turn power to motors on if needed
@@ -196,9 +199,6 @@ void brinkTask(void *pvParameters) {
 		else
 			gpio_set_level(OUTPUT_BRINKON, 0); // turn power to motors off
 
-		if (tempRPMafvoer > 0)  
-				onTimer = ONTIME;
-	
 		if (udpTimer)
 			udpTimer--;
 		else {
