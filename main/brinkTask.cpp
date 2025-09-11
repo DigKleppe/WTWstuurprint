@@ -208,7 +208,7 @@ void brinkTask(void *pvParameters) {
 			udpTimer = 2;
 		}
 
-		if ((binnenTemperatuur > userSettings.MaxBuitenTemperatuurbypass) && (binnenTemperatuur > userSettings.MinBuitenTemperatuurbypass)) {
+		if ((binnenTemperatuur > userSettings.MinBinnenTemperatuurbypass) && (buitenTemperatuur > userSettings.MinBuitenTemperatuurbypass)) {
 			if (buitenTemperatuur < binnenTemperatuur) {
 				gpio_set_level(OUTPUT_BYPASS, 1);
 			//	ESP_LOGI(TAG, "bypass on");

@@ -29,7 +29,7 @@ typedef struct {
 	int motorSpeedMax;
 	int fixedSpeed[3];
 	int MinBuitenTemperatuurbypass;
-	int MaxBuitenTemperatuurbypass;
+	int MinBinnenTemperatuurbypass;
 	int nrSensors;
 	char checkstr[MAX_STRLEN + 1];
 } userSettings_t;

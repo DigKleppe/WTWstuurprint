@@ -34,7 +34,7 @@ const CGIdesc_t writeVarDescriptorTable[] = {
 	{"CO2 grenswaarde (ppm)", &userSettings.CO2setpoint, INT, 1},
 	{"Aantal sensoren", &userSettings.nrSensors, INT, 1},
 	{"Min buitentemperatuur bypass", &userSettings.MinBuitenTemperatuurbypass, INT, 1},
-	{"Max binnentemperatuur bypass", &userSettings.MaxBuitenTemperatuurbypass, INT, 1},
+	{"Min binnentemperatuur bypass", &userSettings.MinBinnenTemperatuurbypass, INT, 1},
 	{NULL, NULL, INT, 1},
 };
 
