@@ -31,6 +31,7 @@ esp_err_t init_spiffs(void);
 static const char *TAG = "main";
 
 uint32_t timeStamp = 1; // global timestamp for logging
+int switches; // for CGI
 
 myKey_t getKeyPins(void) { 
    uint32_t port =  REG_READ(GPIO_IN_REG);
@@ -48,11 +49,10 @@ void initKeyPins (void) {
   gpio_set_direction( GPIO_NUM_6, GPIO_MODE_INPUT);
   gpio_set_pull_mode( GPIO_NUM_6, GPIO_PULLDOWN_ONLY);
   gpio_set_direction( GPIO_NUM_7, GPIO_MODE_INPUT);
-  gpio_set_pull_mode( GPIO_NUM_7, GPIO_PULLDOWN_ONLY);
   gpio_set_direction( GPIO_NUM_12, GPIO_MODE_INPUT);
   gpio_set_pull_mode( GPIO_NUM_12, GPIO_PULLDOWN_ONLY);
   gpio_set_direction( GPIO_NUM_13, GPIO_MODE_INPUT);
-  gpio_set_pull_mode( GPIO_NUM_13, GPIO_PULLDOWN_ONLY);
+
 }
 
 int cancelSettingsScript(char *pBuffer, int count); // dummy 
@@ -62,6 +62,7 @@ extern "C" void app_main() {
 	time_t now = 0;
 	struct tm timeinfo;
 	int lastSecond = -1;
+	int temp, oldSwitches =0;
 
 	TaskHandle_t taskHandles[NO_TASKS];
 
@@ -105,6 +106,30 @@ extern "C" void app_main() {
 	while (1) {
 		vTaskDelay(pdMS_TO_TICKS(20)); //
 		keysTimerHandler_ms(20);
+		temp = 0;
+
+		if ( keysRT & SK2) 
+			temp |= 1;
+		if ( keysRT & SK3)
+			temp |= 2;
+
+		if ( keysRT & SB2)
+			temp |= 4;
+	
+		if ( keysRT & SB3)
+			temp |= 8;
+
+		if ( keysRT & PB1)
+			temp |= 16;
+	
+		if ( keysRT & PB2)
+			temp |= 32;
+
+		switches = temp;
+		if( switches != oldSwitches) {
+			ESP_LOGE(TAG, "Switches:%d", switches);
+			oldSwitches = switches;
+		}
 		
 		time(&now);
 		localtime_r(&now, &timeinfo);

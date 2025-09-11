@@ -15,6 +15,8 @@
 #include "esp_log.h"
 const char *TAG = "commonscripts";
 
+extern int switches;
+
 #include "esp_log.h"
 extern int scriptState;
 static int rssi;
@@ -55,11 +57,12 @@ const CGIdesc_t advancedWriteVarDescriptorTable[] = {
 
 
 const CGIdesc_t commonInfoTable[] = {
-	{"firmwareversie", (void *)firmWareVersion, STR, 1},
+	{"Firmwareversie", (void *)firmWareVersion, STR, 1},
 	{"SPIFFS versie", wifiSettings.SPIFFSversion, STR, 1},
 	{"RSSI", (void *)&rssi, INT, 1},
 	{"Binnentemperatuur (°C)", &binnenTemperatuur, INT, 1},
 	{"Buitentemperatuur (°C)", &buitenTemperatuur, INT, 1},
+	{"Schakelaars",&switches, INT, 1 },
 	{NULL, NULL, INT, 1}
 };
 
