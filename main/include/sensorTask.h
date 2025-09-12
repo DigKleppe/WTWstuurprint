@@ -2,7 +2,6 @@
 
 
 #define NR_SENSORS          5    // 0 = reference sensor 
-#define SENSOR_TIMEOUT      60  // seconds
 #define _ERRORVALUE         9999 
 int getRTMeasValuesScript(char *pBuffer, int count);
 int getSensorInfoScript(char *pBuffer, int count);

@@ -32,7 +32,7 @@ static const char *TAG = "sensorTask";
 #define SENSORMSSG_TIMEOUT 1000 // wait 1 sec
 #define UDPSENSORPORT 5050
 #define MAXLEN 128
-#define SENSOR_TIMEOUT 60 // 60 seconds timeout for sensors
+#define SENSOR_TIMEOUT 2 // minutes timeout for sensors
 #define LOGINTERVAL 5	  // minutes
 #define AVERAGES 10		  // number of values to average
 
@@ -176,9 +176,12 @@ void sensorTask(void *pvParameters) {
 			for (int n = 0; n < NR_SENSORS; n++) {
 				if (sensorInfo[n].status > SENSORSTATUS_NOTPRESENT) { // once sensor is detected
 					sensorInfo[n].timeoutTmr++;
-					if (sensorInfo[n].timeoutTmr >= (SENSOR_TIMEOUT * 100)) {
+					if (sensorInfo[n].timeoutTmr >= (SENSOR_TIMEOUT)) {
 						sensorInfo[n].status = SENSORSTATUS_NOCOMM;
 						sensorInfo[n].timeoutTmr--;
+						sensorInfo[n].CO2val = _ERRORVALUE;
+						sensorInfo[n].temperature = _ERRORVALUE;
+						sensorInfo[n].RH = _ERRORVALUE;
 					}
 				}
 				if (sensorInfo[n].status == SENSORSTATUS_OK) {

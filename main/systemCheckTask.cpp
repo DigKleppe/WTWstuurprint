@@ -11,6 +11,7 @@
 #include "sensorTask.h"
 #include "settings.h"
 #include "temperatureSensorTask.h"
+#include "updateTask.h"
 #include "wifiConnect.h"
 
 static const char *TAG = "systemCheck";
@@ -23,37 +24,37 @@ void systemCheckTask(void *pvParameters) {
 
 	while (1) {
 		err = 0;
-		switch ((int)connectStatus) {
-		case CONNECTING:
-			//	ESP_LOGI(TAG, "CONNECTING");
-			onBoardColor = COLOR_RED;
-			D1color = COLOR_RED;
-			break;
-
-		case WPS_ACTIVE:
-			//	ESP_LOGI(TAG, "WPS_ACTIVE");
-			onBoardFlash = true;
-			D1Flash = true;
-			onBoardColor = COLOR_BLUE;
-			D1color = COLOR_BLUE;
-			break;
-
-		case IP_RECEIVED:
-			//     ESP_LOGI(TAG, "IP_RECEIVED");
-			onBoardFlash = false;
-			D1Flash = false;
-			onBoardColor = COLOR_GREEN;
-			D1color = COLOR_GREEN;
-			break;
-
-		case CONNECTED:
-			onBoardColor = COLOR_YELLOW;
+		if (updateStatus == UPDATE_BUSY)
 			D1color = COLOR_YELLOW;
-			break;
+		else {
+			switch ((int)connectStatus) {
+			case CONNECTING:
+				onBoardColor = COLOR_RED;
+				D1color = COLOR_RED;
+				break;
 
-		default:
-			ESP_LOGI(TAG, "default");
-			break;
+			case WPS_ACTIVE:
+				onBoardFlash = true;
+				D1Flash = true;
+				onBoardColor = COLOR_BLUE;
+				D1color = COLOR_BLUE;
+				break;
+
+			case IP_RECEIVED:
+				onBoardFlash = false;
+				D1Flash = false;
+				onBoardColor = COLOR_GREEN;
+				D1color = COLOR_GREEN;
+				break;
+
+			case CONNECTED:
+				onBoardColor = COLOR_YELLOW;
+				D1color = COLOR_YELLOW;
+				break;
+
+			default:
+				break;
+			}
 		}
 
 		//		memset(tempMessage, 0, BUFSIZE);
@@ -71,7 +72,7 @@ void systemCheckTask(void *pvParameters) {
 			if (sensorInfo[n].status == SENSORSTATUS_OK)
 				nrSensors++;
 		}
-		if (NR_SENSORS < userSettings.nrSensors) {
+		if (nrSensors < userSettings.nrSensors) {
 			// snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Sensor fout\n");
 			err = 5;
 		}
