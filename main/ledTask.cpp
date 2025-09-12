@@ -13,7 +13,7 @@ static const char *TAG = "ledTask";
 #define LED_GPIO1 GPIO_NUM_47 // on s3 board
 #define LED_GPIO2 GPIO_NUM_11 // on keyledprint
 
-#define BRIGHTNESS 30
+#define BRIGHTNESS 20
 
 static const rgb_t colors[] = {
 	{.r = 0x0f, .g = 0x0f, .b = 0x0f}, // wit
@@ -39,13 +39,14 @@ static const rgb_t colorsOnboardLed[] = {
 
 LEDcolor_t onBoardColor, D1color, D2color; // leds on ledprint
 bool onBoardFlash, D1Flash, D2Flash;
-
+int D2nrFlashes;
 // S3 wemos mini on board LED
 // https://www.wemos.cc/en/latest/_static/files/sch_s3_mini_v1.0.0.pdf
 
-
 void LEDtask(void *pvParameters) {
 	int c = 0;
+	int flashes = 0;
+	int flashPauze = 0;
 
 	led_strip_t strip = {
 		.type = LED_TYPE,
@@ -59,7 +60,6 @@ void LEDtask(void *pvParameters) {
 		.buf = NULL,
 	};
 	ESP_ERROR_CHECK(led_strip_init(&strip));
-
 
 	led_strip_t onBoardStrip = {
 		.type = LED_TYPE,
@@ -81,11 +81,14 @@ void LEDtask(void *pvParameters) {
 	while (1) {
 		led_strip_set_pixel(&onBoardStrip, 0, colorsOnboardLed[onBoardColor]);
 		led_strip_set_pixel(&strip, 0, colors[D1color]);
-		led_strip_set_pixel(&strip, 1, colors[D2color]);
+
+		if (flashPauze == 0) 
+			led_strip_set_pixel(&strip, 1, colors[D2color]);
+	
 		led_strip_flush(&onBoardStrip);
 		led_strip_flush(&strip);
 		vTaskDelay(pdMS_TO_TICKS(300));
-		
+
 		if (onBoardFlash) {
 			led_strip_set_pixel(&onBoardStrip, 0, colorsOnboardLed[COLOR_OFF]);
 		}
@@ -95,8 +98,25 @@ void LEDtask(void *pvParameters) {
 		if (D2Flash) {
 			led_strip_set_pixel(&strip, 1, colors[COLOR_OFF]);
 		}
+
+		if ((flashPauze == 0) && (D2nrFlashes > 0)) {
+			if (flashes < 0)
+				flashes = D2nrFlashes;
+			if (flashes > 0) {
+				led_strip_set_pixel(&strip, 1, colors[COLOR_OFF]);
+				flashes--;
+			}
+			if (flashes == 0) { // last flash given, pause
+				flashPauze = 4;
+				flashes--;
+			}
+		}
+		if ( flashPauze > 0 )
+			flashPauze--;
+
 		led_strip_flush(&onBoardStrip);
 		led_strip_flush(&strip);
+
 		vTaskDelay(pdMS_TO_TICKS(300));
 	}
 }

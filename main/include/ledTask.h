@@ -20,6 +20,7 @@ typedef enum {
 
 extern LEDcolor_t onBoardColor, D1color, D2color; // leds on ledprint
 extern bool onBoardFlash, D1Flash, D2Flash;
+extern int D2nrFlashes;
 
 void startLEDs();
 #endif

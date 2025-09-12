@@ -4,7 +4,9 @@
 
 #include "esp_log.h"
 
+#include "brinkTask.h"
 #include "ledTask.h"
+#include "measureRPMtask.h"
 #include "motorControlTask.h"
 #include "sensorTask.h"
 #include "settings.h"
@@ -13,7 +15,7 @@
 
 static const char *TAG = "systemCheck";
 
-static int err; 
+static int err;
 
 // Task to check system status, e.g., temperature sensors
 void systemCheckTask(void *pvParameters) {
@@ -25,28 +27,28 @@ void systemCheckTask(void *pvParameters) {
 		case CONNECTING:
 			//	ESP_LOGI(TAG, "CONNECTING");
 			onBoardColor = COLOR_RED;
-            D1color = COLOR_RED;
+			D1color = COLOR_RED;
 			break;
 
 		case WPS_ACTIVE:
 			//	ESP_LOGI(TAG, "WPS_ACTIVE");
 			onBoardFlash = true;
-            D1Flash = true;
-            onBoardColor = COLOR_BLUE; 
-           	D1color = COLOR_BLUE;
+			D1Flash = true;
+			onBoardColor = COLOR_BLUE;
+			D1color = COLOR_BLUE;
 			break;
 
 		case IP_RECEIVED:
 			//     ESP_LOGI(TAG, "IP_RECEIVED");
 			onBoardFlash = false;
 			D1Flash = false;
-			onBoardColor = COLOR_GREEN; 
-            D1color = COLOR_GREEN;
+			onBoardColor = COLOR_GREEN;
+			D1color = COLOR_GREEN;
 			break;
 
 		case CONNECTED:
-           	onBoardColor = COLOR_YELLOW; 
-            D1color = COLOR_YELLOW;
+			onBoardColor = COLOR_YELLOW;
+			D1color = COLOR_YELLOW;
 			break;
 
 		default:
@@ -54,15 +56,14 @@ void systemCheckTask(void *pvParameters) {
 			break;
 		}
 
-
-//		memset(tempMessage, 0, BUFSIZE);
+		//		memset(tempMessage, 0, BUFSIZE);
 		if (binnenTemperatuur == ERRORTEMP) {
-		//	snprintf(tempMessage, BUFSIZE, "Binnentemperatuursensor fout\n");
-			err = 1;
+			//	snprintf(tempMessage, BUFSIZE, "Binnentemperatuursensor fout\n");
+			err = 3;
 		}
 		if (buitenTemperatuur == ERRORTEMP) {
-		//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Buitentemperatuursensor fout\n");
-			err = 1;
+			//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Buitentemperatuursensor fout\n");
+			err = 4;
 		}
 
 		nrSensors = 0;
@@ -71,34 +72,41 @@ void systemCheckTask(void *pvParameters) {
 				nrSensors++;
 		}
 		if (NR_SENSORS < userSettings.nrSensors) {
-			//snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Sensor fout\n");
-			err = 2;
+			// snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Sensor fout\n");
+			err = 5;
+		}
+		if (!brinkOff) {
+			if (getMotorStatus(AFAN) != MOTOR_OK) {
+				//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "AfvoerVentilator fout\n");
+				err = 2;
+			}
+			if (getMotorStatus(TFAN) != MOTOR_OK) {
+				//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "ToevoeVentilator fout\n");
+				err = 1;
+			}
 		}
 
-		if (getMotorStatus(AFAN) != MOTOR_OK) {
-		//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "AfvoerVentilator fout\n");
-			err = 3;
-		}
-		if (getMotorStatus(TFAN) != MOTOR_OK) {
-		//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "ToevoeVentilator fout\n");
-			err = 3;
-		}
+		D2nrFlashes = err;
 		switch (err) {
 		case 0:
-			D2color = COLOR_GREEN;
-			D2Flash = false;
-		//	memset(errorMessage, 0, sizeof(errorMessage));
+			if (brinkOff) {
+				D2color = COLOR_YELLOW;
+				D2Flash = true;
+			} else {
+				D2Flash = false;
+				if (getRPM(AFAN) > 0)
+					D2color = COLOR_GREEN;
+				else
+					D2color = COLOR_OFF;
+			}
 			break;
 		default:
-			D2Flash = true;
 			D2color = COLOR_RED;
-			//strcpy(errorMessage, tempMessage);
-			//ESP_LOGE(TAG, "%s", errorMessage);
+			// strcpy(errorMessage, tempMessage);
+			// ESP_LOGE(TAG, "%s", errorMessage);
 			break;
 		}
 		vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 }
-int getSystemError(void) {
-    return err;
-}
+int getSystemError(void) { return err; }
