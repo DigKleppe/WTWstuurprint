@@ -3,7 +3,7 @@
 
 //#define FIRMWARE_VERSION "0.1.0"
 
-#define FIRMWARE_VERSION "0.1.6"  // make it equal to firmWareVersion.txt 
-#define SPIFFS_VERSION "0.1.2"  
+#define FIRMWARE_VERSION "0.1.7"  // make it equal to firmWareVersion.txt 
+#define SPIFFS_VERSION "0.1.3"  
 
 #endif /* SOFTWAREVERSIONS_H_ */

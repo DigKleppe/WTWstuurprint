@@ -66,15 +66,16 @@ void systemCheckTask(void *pvParameters) {
 			//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Buitentemperatuursensor fout\n");
 			err = 4;
 		}
-
-		nrSensors = 0;
-		for (int n = 0; n < NR_SENSORS; n++) {
-			if (sensorInfo[n].status == SENSORSTATUS_OK)
-				nrSensors++;
-		}
-		if (nrSensors < userSettings.nrSensors) {
-			// snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Sensor fout\n");
-			err = 5;
+		if (connectStatus == IP_RECEIVED) {  // only check when wifi 
+			nrSensors = 0;
+			for (int n = 0; n < NR_SENSORS; n++) {
+				if (sensorInfo[n].status == SENSORSTATUS_OK)
+					nrSensors++;
+			}
+			if (nrSensors < userSettings.nrSensors) {
+				// snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Sensor fout\n");
+				err = 5;
+			}
 		}
 		if (!brinkOff) {
 			if (getMotorStatus(AFAN) != MOTOR_OK) {
