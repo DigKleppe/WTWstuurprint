@@ -5,9 +5,8 @@ function initSettings() {
 	getSettings( "getAdvSettings" ,TABLENAME);
 }
 
-function setuserDefaults(){
-	getItem("setAdvDefaults");
-	getSettings( "getAdvSettings" ,TABLENAME);
+function setAdvUserDefaults(){
+	getItem("setAdvUserDefaults");
 }
 
 function forgetWifi() {
