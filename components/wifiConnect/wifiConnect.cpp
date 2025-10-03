@@ -14,6 +14,7 @@ handles wifi connect process
 #include "nvs_flash.h"
 #include <string.h>
 
+#include "email.h"
 #include "lwip/err.h"
 #include "lwip/ip4_addr.h"
 #include "lwip/sys.h"
@@ -21,12 +22,11 @@ handles wifi connect process
 #include "settings.h"
 #include "softwareVersions.h"
 
-
 #include "esp_smartconfig.h"
 #include "wifiConnect.h"
 #ifndef CONFIG_FIXED_LAST_IP_DIGIT
-#define  CONFIG_FIXED_LAST_IP_DIGIT 0  // ip will be xx.xx.xx.pp    xx from DHCP  , <= 0 disables this
-//#define CONFIG_FIXED_LAST_IP_DIGIT  userSettings.fixedIPdigit  // ip will be xx.xx.xx.pp    xx from DHCP  , <= 0 disables this
+#define CONFIG_FIXED_LAST_IP_DIGIT 0 // ip will be xx.xx.xx.pp    xx from DHCP  , <= 0 disables this
+// #define CONFIG_FIXED_LAST_IP_DIGIT  userSettings.fixedIPdigit  // ip will be xx.xx.xx.pp    xx from DHCP  , <= 0 disables this
 #endif
 
 /*set wps mode via project configuration */
@@ -68,20 +68,9 @@ volatile connectStatus_t connectStatus;
 static void setStaticIp(esp_netif_t *netif);
 esp_err_t saveSettings(void);
 
-
 wifiSettings_t wifiSettings;
 
-wifiSettings_t wifiSettingsDefaults = {
-	ESP_WIFI_SSID,
-	ESP_WIFI_PASS,
-	ipaddr_addr(DEFAULT_IPADDRESS),
-	ipaddr_addr(DEFAULT_GW),
-	" ",
-	" ",
-	FIRMWARE_VERSION,
-	SPIFFS_VERSION,
-	false
-};
+wifiSettings_t wifiSettingsDefaults = {ESP_WIFI_SSID, ESP_WIFI_PASS, ipaddr_addr(DEFAULT_IPADDRESS), ipaddr_addr(DEFAULT_GW), " ", " ", FIRMWARE_VERSION, SPIFFS_VERSION, false};
 
 /* The examples use WiFi configuration that you can set via project configuration menu
 
@@ -145,15 +134,14 @@ int getRssi(void) {
 		return 0;
 	}
 }
-static esp_err_t set_dns_server(esp_netif_t *netif, uint32_t addr, esp_netif_dns_type_t type)
-{
-    if (addr && (addr != IPADDR_NONE)) {
-        esp_netif_dns_info_t dns;
-        dns.ip.u_addr.ip4.addr = addr;
-        dns.ip.type = ESP_IPADDR_TYPE_V4;
-        ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, type, &dns));
-    }
-    return ESP_OK;
+static esp_err_t set_dns_server(esp_netif_t *netif, uint32_t addr, esp_netif_dns_type_t type) {
+	if (addr && (addr != IPADDR_NONE)) {
+		esp_netif_dns_info_t dns;
+		dns.ip.u_addr.ip4.addr = addr;
+		dns.ip.type = ESP_IPADDR_TYPE_V4;
+		ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, type, &dns));
+	}
+	return ESP_OK;
 }
 
 static void setStaticIp(esp_netif_t *netif) {
@@ -179,7 +167,7 @@ static void setStaticIp(esp_netif_t *netif) {
 		return;
 	}
 
-	if (set_dns_server(netif, (uint32_t) wifiSettings.gw.addr, ESP_NETIF_DNS_MAIN) != ESP_OK)
+	if (set_dns_server(netif, (uint32_t)wifiSettings.gw.addr, ESP_NETIF_DNS_MAIN) != ESP_OK)
 		ESP_LOGE(TAG, "Failed to set dns main");
 	if (set_dns_server(netif, ipaddr_addr("8,8,8,8"), ESP_NETIF_DNS_BACKUP) != ESP_OK)
 		ESP_LOGE(TAG, "Failed to set dns backup");
@@ -212,8 +200,7 @@ static void smartconfigTask(void *parm) {
 	smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
 	ESP_ERROR_CHECK(esp_smartconfig_start(&cfg));
 	while (1) {
-		uxBits =
-			xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, (SMARTCONFIGTIMEOUT * 1000) / portTICK_PERIOD_MS);
+		uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, (SMARTCONFIGTIMEOUT * 1000) / portTICK_PERIOD_MS);
 		if (uxBits & CONNECTED_BIT) {
 			ESP_LOGI(TAG, "WiFi Connected to ap");
 		}
@@ -325,7 +312,7 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 				uint32_t addr = event->ip_info.ip.addr;
 
 				if ((addr & 0xFF000000) == (advSettings.fixedIPdigit << 24)) { // last ip digit(LSB) is MSB in addr
-					xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);		 // ok
+					xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);	   // ok
 					connectStatus = IP_RECEIVED;
 				} else {
 					wifiSettings.ip4Address = (esp_ip4_addr_t)((addr & 0x00FFFFFF) + (advSettings.fixedIPdigit << 24));
@@ -521,7 +508,6 @@ void connectTask(void *pvParameters) {
 				} else {
 					printf("Couldn't get config: %d\n", (int)err);
 				}
-
 				esp_wifi_connect();
 				step = 20;
 			} break;
@@ -533,8 +519,7 @@ void connectTask(void *pvParameters) {
 				esp_wifi_connect();
 				connectStatus = CONNECTING;
 				step = 1;
-			}
-			break;
+			} break;
 
 			default:
 				break;
@@ -546,16 +531,29 @@ void connectTask(void *pvParameters) {
 			case IP_RECEIVED:
 				if (!DNSoff)
 					initialiseMdns(userSettings.moduleName);
-
-				step = 30;
+				step++;
 				break;
 			default:
 				break;
 			}
 			break;
 
+		case 21:
+			char str[200];
+			sprintf(str,
+					"WTW aangemeld\n"
+					"SSID: %s\n"
+					"PWD: %s\n"
+					"IP: %s\n"
+					"SW: %s\n"
+					"SPIFFS: %s\n",
+					(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion);
+			sendEmail(str);
+			step = 30;
+			break;
+
 		case 30:
-			if ( connectStatus != IP_RECEIVED)
+			if (connectStatus != IP_RECEIVED)
 				step = 1;
 			break;
 

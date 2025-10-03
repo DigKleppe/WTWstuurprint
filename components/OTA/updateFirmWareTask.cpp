@@ -35,7 +35,6 @@ void updateFirmwareTask(void *pvParameter) {
 	size_t binary_file_length = 0;
 	httpsMssg_t mssg;
 	bool rdy = false;
-	bool doUpdate = false;
 	bool image_header_was_checked = false;
 	int data_read;
 	int block = 0;

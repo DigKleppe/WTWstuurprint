@@ -8,9 +8,10 @@ set(COMPONENT_ADD_INCLUDEDIRS "include")
 #set(COMPONENT_PRIV_REQUIRES driver log color esp_idf_lib_helpers)
 #set(COMPONENT_REQUIRES "driver" "log" "color" "esp_idf_lib_helpers")
 #set(COMPONENT_PRIV_REQUIRES  "klp"  "esp_adc" "spiffs" "nvs_flash" "gui" "lvgl" )
-set(COMPONENT_EMBED_TXTFILES "${project_dir}/main/server_certs/ca_cert.pem")
+set(COMPONENT_EMBED_TXTFILES "${project_dir}/main/server_certs/ca_cert.pem"  "${project_dir}/main/server_certs/gmail_server_root_cert.pem")
 register_component()
 #uncomment 
 spiffs_create_partition_image(storage ../spiffs_image FLASH_IN_PROJECT)  
 #target_link_libraries(${COMPONENT_TARGET} "-u ld_include_highint_hdl_my")
+
 
