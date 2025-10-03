@@ -172,6 +172,7 @@ void motorControlTask(void *pvParameters) {
 		if (RPMSetpoint == 0) {
 			setPWMpercent(PWMchannelList[id], 0);
 			motor[id].actualRPM = getRPM(id);
+			motor[id].actualRPMpercent = 0;
 			vTaskDelay(10 / portTICK_PERIOD_MS);
 		} else {
 			setpointPWM = ((float(RPMSetpoint) / MAXRPM) * (maxPWM - minPWM)) + minPWM;
