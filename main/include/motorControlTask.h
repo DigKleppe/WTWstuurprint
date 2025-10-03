@@ -12,6 +12,7 @@ void motorControlTask(void *pvParameters);
 typedef struct {
     int desiredRPM;
     int actualRPM;
+    int actualRPMpercent;
     float actualPWM;
     motorStatus_t status;
     Pid pid;
@@ -24,6 +25,7 @@ typedef struct {
 
 extern motorSettings_t motorsettings[2];
 void setRPM(motorID_t id, float rpm);
+int getRPMpercent (motorID_t id); 
 
 int resetFanLimitsScript(char *pBuffer, int count) ;
 

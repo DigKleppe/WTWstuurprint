@@ -83,7 +83,7 @@ void brinkTask(void *pvParameters) {
 		tempRPMafvoer = 0;
 
 		//	pid.setImaxImin(userSettings.CO2PIDmaxI, -userSettings.CO2PIDmaxI);
-		pid.setImaxImin(advSettings.CO2PIDmaxI, -advSettings.CO2PIDmaxI / 2);
+		pid.setImaxImin(advSettings.CO2PIDmaxI, 0) ; // -advSettings.CO2PIDmaxI / 2);
 		pid.setPIDValues(advSettings.CO2PIDp, advSettings.CO2PIDi, 0);
 		pid.setDesiredValue(userSettings.CO2setpoint);
 

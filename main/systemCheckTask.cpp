@@ -40,16 +40,16 @@ void systemCheckTask(void *pvParameters) {
 				D1color = COLOR_BLUE;
 				break;
 
-			case IP_RECEIVED:
+			case CONNECTED:
+				onBoardColor = COLOR_YELLOW;
+				D1color = COLOR_YELLOW;
+				break;
+
+			case CONNECT_READY:
 				onBoardFlash = false;
 				D1Flash = false;
 				onBoardColor = COLOR_GREEN;
 				D1color = COLOR_GREEN;
-				break;
-
-			case CONNECTED:
-				onBoardColor = COLOR_YELLOW;
-				D1color = COLOR_YELLOW;
 				break;
 
 			default:
@@ -66,7 +66,7 @@ void systemCheckTask(void *pvParameters) {
 			//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Buitentemperatuursensor fout\n");
 			err = 4;
 		}
-		if (connectStatus == IP_RECEIVED) {  // only check when wifi 
+		if (connectStatus == CONNECT_READY) { // only check when wifi
 			nrSensors = 0;
 			for (int n = 0; n < NR_SENSORS; n++) {
 				if (sensorInfo[n].status == SENSORSTATUS_OK)

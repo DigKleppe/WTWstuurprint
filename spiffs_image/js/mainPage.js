@@ -64,8 +64,8 @@ function initChart() {
 	CO2RPMchart = new google.visualization.LineChart(document.getElementById('CO2RPMchart'));
 	CO2RPMdata = new google.visualization.DataTable();
 	CO2RPMdata.addColumn('string', 'Time');
-	CO2RPMdata.addColumn('number', "CO2");
-	CO2RPMdata.addColumn('number', "Toerental");
+	CO2RPMdata.addColumn('number', "CO2 (ppm)");
+	CO2RPMdata.addColumn('number', "Toerental (%)");
 	if (SIMULATE) {
 		simplot();
 	//	plotTest();

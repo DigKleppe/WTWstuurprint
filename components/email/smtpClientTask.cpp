@@ -43,7 +43,7 @@
 
 #define SERVER_USES_STARTSSL 1
 
-		static const char *TAG = "smtp_example";
+static const char *TAG = "Email";
 
 #define TASK_STACK_SIZE (8 * 1024)
 #define BUF_SIZE 512
@@ -72,6 +72,8 @@
 
 extern const uint8_t server_root_cert_pem_start[] asm("_binary_gmail_server_root_cert_pem_start");
 extern const uint8_t server_root_cert_pem_end[] asm("_binary_gmail_server_root_cert_pem_end");
+
+static volatile bool emailIsSent;
 
 static int write_and_get_response(mbedtls_net_context *sock_fd, unsigned char *buf, size_t len) {
 	int ret;
@@ -228,7 +230,6 @@ static int perform_tls_handshake(mbedtls_ssl_context *ssl) {
 	} else {
 		ESP_LOGI(TAG, "Certificate verified.");
 	}
-
 	ESP_LOGI(TAG, "Cipher suite is %s", mbedtls_ssl_get_ciphersuite(ssl));
 	ret = 0; /* No error */
 
@@ -478,10 +479,14 @@ void smtpClientTask(void *pvParameters) {
 		}
 	} else
 		ESP_LOGE(TAG, "Task ended with error");
+	emailIsSent = true;
 	vTaskDelete(NULL);
 }
 
 esp_err_t sendEmail(char *content) {
+	emailIsSent = false;
 	xTaskCreate(&smtpClientTask, "smtp_client_task", TASK_STACK_SIZE, (void *)content, 5, NULL);
+	while (! emailIsSent)
+		vTaskDelay( 10);
 	return ESP_OK;
 }

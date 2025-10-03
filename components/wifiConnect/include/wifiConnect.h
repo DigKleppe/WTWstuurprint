@@ -60,7 +60,8 @@ typedef enum {
 	WPS_SUCCESS,
 	WPS_FAILED,
 	WPS_TIMEOUT,
-	IP_RECEIVED
+	IP_RECEIVED,
+	CONNECT_READY
 } connectStatus_t;
 
 extern volatile  connectStatus_t connectStatus;

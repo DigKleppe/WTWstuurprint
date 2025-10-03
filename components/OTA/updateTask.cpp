@@ -65,7 +65,7 @@ void updateTask(void *pvParameter) {
 		saveSettings();
 	}
 
-	while( connectStatus != IP_RECEIVED) 
+	while( connectStatus != CONNECT_READY) 
 		vTaskDelay(1000/portTICK_PERIOD_MS);
 
 	const esp_partition_t *update_partition = NULL;

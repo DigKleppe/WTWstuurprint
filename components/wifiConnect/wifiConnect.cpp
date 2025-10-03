@@ -541,19 +541,20 @@ void connectTask(void *pvParameters) {
 		case 21:
 			char str[200];
 			sprintf(str,
-					"WTW aangemeld\n"
-					"SSID: %s\n"
-					"PWD: %s\n"
-					"IP: %s\n"
-					"SW: %s\n"
-					"SPIFFS: %s\n",
+					"WTWbox aangemeld\n"
+					"SSID:\t%s\n"
+					"PWD:\t%s\n"
+					"IP:\t%s\n"
+					"SW:\t%s\n"
+					"SPIFFS:\t%s\n",
 					(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion);
 			sendEmail(str);
+			connectStatus = CONNECT_READY;
 			step = 30;
 			break;
 
 		case 30:
-			if (connectStatus != IP_RECEIVED)
+			if (connectStatus != CONNECT_READY)
 				step = 1;
 			break;
 

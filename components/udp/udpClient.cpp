@@ -32,7 +32,7 @@ int UDPsendMssg(int port, void *mssg, int len) {
 	
 	struct sockaddr_in servaddr;
 	
-	if ( connectStatus != IP_RECEIVED)
+	if ( connectStatus != CONNECT_READY)
 		return -1;
 	
 	// Creating socket file descriptor
