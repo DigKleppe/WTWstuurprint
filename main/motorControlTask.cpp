@@ -235,8 +235,8 @@ void motorControlTask(void *pvParameters) {
 					control = minPWM;
 
 				motor[id].actualPWM = control;
-				if (id == AFAN)
-					printf(">AV,PID%d:%1.1f,RPM%d:%d, Setp:%d \r\n", (int)id, control, (int)id, getRPM(id) , RPMSetpoint);
+				// if (id == AFAN)
+				// 	printf(">AV,PID%d:%1.1f,RPM%d:%d, Setp:%d \r\n", (int)id, control, (int)id, getRPM(id) , RPMSetpoint);
 
 				//	printf("AV%d, %2.2f PID: %1.1f RPM:%d \n", (int)id, control, control - setpointPWM, getRPM(id));
 				setPWMpercent(PWMchannelList[id], control);

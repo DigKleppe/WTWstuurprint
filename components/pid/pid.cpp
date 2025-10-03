@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-Pid::Pid() {}
+Pid::Pid( int id) {
+	_id = id;
+}
 
 void Pid::setDesiredValue( float value ){
 	desired = value;
@@ -50,14 +52,15 @@ float Pid::update ( float measuredValue ){
 		if (iSum < _iMin) // or negative value
 			iSum = _iMin;
 	}
-	
-//	printf("\ndelta: %f P:%f I:%f ", delta, result, iSum);
+	if ( _id == 1)
+		printf("\ndelta: %f P:%f I:%f ", delta, result, iSum);
 
 	result += iSum;
 	result += (measuredValue-oldMeasuredValue) * D;
 	oldMeasuredValue = measuredValue;
 
-//	printf( "PID %%: %1.1f ",  result);
+	if ( _id == 1)
+		printf( "PID %%: %1.1f\n\r",  result);
 	
 	return result;
 }

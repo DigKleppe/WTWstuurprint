@@ -70,7 +70,7 @@ void brinkTask(void *pvParameters) {
 	int CO2postTimer = 0;
 	int CO2Value = 0;
 	char buf[64];
-	Pid pid;
+	Pid pid(1);
 	int tempRPMToevoer = 0, tempRPMafvoer = 0;
 	gpio_set_direction(OUTPUT_BRINKON, GPIO_MODE_OUTPUT);
 	gpio_set_drive_capability(OUTPUT_BRINKON, GPIO_DRIVE_CAP_3);
@@ -81,9 +81,8 @@ void brinkTask(void *pvParameters) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 		tempRPMToevoer = 0;
 		tempRPMafvoer = 0;
-
-		//	pid.setImaxImin(userSettings.CO2PIDmaxI, -userSettings.CO2PIDmaxI);
-		pid.setImaxImin(advSettings.CO2PIDmaxI, 0) ; // -advSettings.CO2PIDmaxI / 2);
+	
+		pid.setImaxImin(0, -advSettings.CO2PIDmaxI); // -advSettings.CO2PIDmaxI / 2);
 		pid.setPIDValues(advSettings.CO2PIDp, advSettings.CO2PIDi, 0);
 		pid.setDesiredValue(userSettings.CO2setpoint);
 

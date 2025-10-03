@@ -13,7 +13,7 @@
 
 class Pid {
 public:
-  Pid();
+  Pid(int id = 0);
   void setDesiredValue( float value );
   void setPIDValues ( float Pval,float Ival, float Dval);
   void setImaxImin (float Imax, float Imin);
@@ -22,6 +22,7 @@ public:
 
  
 private:
+  int _id;
   float _iMax = 100;
   float _iMin = 0;
   float P = 0,I = 0, D = 0;
