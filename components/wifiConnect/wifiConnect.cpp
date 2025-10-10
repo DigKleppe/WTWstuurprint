@@ -179,8 +179,11 @@ static void setStaticIp(esp_netif_t *netif) {
 #ifdef CONFIG_WPS_ENABLED
 static bool wpsActive = false;
 static TimerHandle_t wpsTimer;
+
+//configTIMER_TASK_STACK_DEPTH 4096! if printing message
+// CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=
 void wpsTimerCallback(TimerHandle_t xTimer) {
-	ESP_LOGI(TAG, "WPS Timeout");
+//	ESP_LOGI(TAG, "WPS Timeout");
 	if (connectStatus == WPS_ACTIVE)
 		connectStatus = WPS_TIMEOUT;
 }
