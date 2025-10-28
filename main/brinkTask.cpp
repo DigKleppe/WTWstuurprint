@@ -81,7 +81,7 @@ void brinkTask(void *pvParameters) {
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 		tempRPMToevoer = 0;
 		tempRPMafvoer = 0;
-	
+
 		pid.setImaxImin(0, -advSettings.CO2PIDmaxI); // -advSettings.CO2PIDmaxI / 2);
 		pid.setPIDValues(advSettings.CO2PIDp, advSettings.CO2PIDi, 0);
 		pid.setDesiredValue(userSettings.CO2setpoint);
@@ -93,14 +93,13 @@ void brinkTask(void *pvParameters) {
 
 		if (offTimer == 3) {
 			brinkOff = true;
-			key (PB1); // read keys away
-			key (PB2);
+			key(PB1); // read keys away
+			key(PB2);
 			gpio_set_level(OUTPUT_BRINKON, 0); // turn power to motors off
 		}
-		
-		if ( key (PB1) || key (PB2))
+
+		if (key(PB1) || key(PB2))
 			brinkOff = false;
-		
 
 		if (!brinkOff) {
 			bool switchIn = false;
@@ -137,7 +136,6 @@ void brinkTask(void *pvParameters) {
 					bathRoomMaxTimer = -1;
 				}
 			}
-
 			if (bathRoomMaxTimer > 0) {
 				bathRoomMaxTimer--;
 			}
@@ -151,28 +149,32 @@ void brinkTask(void *pvParameters) {
 			if (keysRT & SK3)
 				manualLevel = 2;
 
-			CO2Value = getMaXCOValue(); // from sensors
-
-			if (CO2Value > 0) { // minstens 1 sensor actief?
-				tempRPMafvoer = -pid.update(CO2Value);
-				if (tempRPMafvoer < 0) { // below CO2 setpoint
-					if (CO2postTimer > 0)
-						tempRPMafvoer = CO2POSTTIMESPEED;
-					if (tempRPMafvoer < userSettings.motorSpeedMin)
-						tempRPMafvoer = userSettings.motorSpeedMin;
-				}
-				if (CO2Value > userSettings.CO2setpoint) {
-					CO2postTimer = CO2POSTTIME;
-				}
-				tempRPMToevoer = tempRPMafvoer;
-			} else {
+			if (userSettings.nrSensors == 0) {		//without sensors 
 				tempRPMafvoer = userSettings.fixedSpeed[0]; // oude stand 1
 				tempRPMToevoer = tempRPMafvoer;
+			} else {
+				CO2Value = getMaXCOValue(); // from sensors
+				if (CO2Value > 0) { // minstens 1 sensor actief?
+					tempRPMafvoer = -pid.update(CO2Value);
+					if (tempRPMafvoer < 0) { // below CO2 setpoint
+						if (CO2postTimer > 0)
+							tempRPMafvoer = CO2POSTTIMESPEED;
+						if (tempRPMafvoer < userSettings.motorSpeedMin)
+							tempRPMafvoer = userSettings.motorSpeedMin;
+					}
+					if (CO2Value > userSettings.CO2setpoint) {
+						CO2postTimer = CO2POSTTIME;
+					}
+					tempRPMToevoer = tempRPMafvoer;
+				}
+				else { // without valid sensorvalue
+					tempRPMafvoer = 0;
+					tempRPMToevoer = tempRPMafvoer;
+				}
+
+				if (CO2postTimer > 0)
+					CO2postTimer--;
 			}
-
-			if (CO2postTimer > 0)
-				CO2postTimer--;
-
 			if (manualLevel > 0) { // set by switches
 				if (userSettings.fixedSpeed[manualLevel] > tempRPMafvoer) {
 					tempRPMafvoer = userSettings.fixedSpeed[manualLevel];
