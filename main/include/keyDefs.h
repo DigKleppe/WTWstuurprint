@@ -7,8 +7,11 @@
 #define SK3 (1<<5)// schakelaar keuken stand 3
 #define SB2 (1<<12)// schakelaar badkamer stand 2
 #define SB3 (1<<6)// schakelaar badkamer stand 3
-#define PB1 (1<<13)   // drukknop links LEDprint
-#define PB2 (1<<7)   // drukknop rechts LEDprint
+#define PB1 (1<<13)   // drukknop links LEDprint OK
+#define PB2 (1<<7)   // drukknop rechts LEDprint F
+#define BUTTON_OK PB1
+#define BUTTON_F PB2
+
 
 
 #endif

@@ -5,6 +5,8 @@
 #include "esp_log.h"
 
 #include "brinkTask.h"
+#include "keyDefs.h"
+#include "keys.h"
 #include "ledTask.h"
 #include "measureRPMtask.h"
 #include "motorControlTask.h"
@@ -15,13 +17,16 @@
 #include "wifiConnect.h"
 
 static const char *TAG = "systemCheck";
+#define MOTORERRORREACTTIME 120 // seconds to make motorError permanent
 
 static int err;
 
 // Task to check system status, e.g., temperature sensors
 void systemCheckTask(void *pvParameters) {
 	int nrSensors;
-
+	int motorErrorTimer = MOTORERRORREACTTIME;
+	int motorError = 0;
+	bool motorErrorAccepted = false;
 	while (1) {
 		err = 0;
 		if (updateStatus == UPDATE_BUSY)
@@ -56,7 +61,37 @@ void systemCheckTask(void *pvParameters) {
 				break;
 			}
 		}
+		if (getMotorStatus(AFAN) != MOTOR_OK) {
+			//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "AfvoerVentilator fout\n");
+			err = 2;
+		}
+		if (getMotorStatus(TFAN) != MOTOR_OK) {
+			//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "ToevoeVentilator fout\n");
+			err = 1;
+		}
+		if (err == 0) {
+			motorErrorTimer = MOTORERRORREACTTIME;
+			motorErrorAccepted = false;
+		}
 
+		else {
+			if (motorErrorTimer <= 0)
+				motorError = err;
+			else
+				motorErrorTimer--;
+		}
+		if (motorError) {
+			if (motorErrorAccepted)
+				err = 0;
+			else {
+				err = motorError;	// make motorError permanent
+				if (keysRT & PB1) { // clear
+					motorError = 0;
+					motorErrorTimer = MOTORERRORREACTTIME;
+					motorErrorAccepted = true;
+				}
+			}
+		}
 		//		memset(tempMessage, 0, BUFSIZE);
 		if (binnenTemperatuur == ERRORTEMP) {
 			//	snprintf(tempMessage, BUFSIZE, "Binnentemperatuursensor fout\n");
@@ -76,15 +111,9 @@ void systemCheckTask(void *pvParameters) {
 				// snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Sensor fout\n");
 				err = 5;
 			}
-		}
-		if (!brinkOff) {
-			if (getMotorStatus(AFAN) != MOTOR_OK) {
-				//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "AfvoerVentilator fout\n");
-				err = 2;
-			}
-			if (getMotorStatus(TFAN) != MOTOR_OK) {
-				//	snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "ToevoeVentilator fout\n");
-				err = 1;
+			for (int n = 1; n < userSettings.nrSensors; n++) {  // sensor[0] is reference , skip
+				if ((sensorInfo[n].CO2val < 300) || (sensorInfo[n].CO2val > 20000))
+					err = 5;
 			}
 		}
 
