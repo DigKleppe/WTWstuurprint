@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp32s3-builtin.cfg"
   ],
-  "idf.port": "/dev/ttyACM2",
+  "idf.port": "/dev/ttyACM0",
   "idf.toolsPath": "/home/dig/.espressif",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32s3"
@@ -22,5 +22,6 @@
     "algorithm": "cpp",
     "format": "cpp",
     "ostream": "cpp"
-  }
+  },
+  "idf.monitorPort": "/dev/ttyACM0"
 }

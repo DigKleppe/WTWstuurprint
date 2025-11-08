@@ -32,7 +32,7 @@ static const char *TAG = "sensorTask";
 #define SENSORMSSG_TIMEOUT 1000 // wait 1 sec
 #define UDPSENSORPORT 5050
 #define MAXLEN 128
-#define SENSOR_TIMEOUT 2 // minutes timeout for sensors
+#define SENSOR_TIMEOUT 5 // minutes timeout for sensors
 #define LOGINTERVAL 5	  // minutes
 #define AVERAGES 10		  // number of values to average
 

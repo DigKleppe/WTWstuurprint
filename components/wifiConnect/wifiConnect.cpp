@@ -60,7 +60,7 @@ bool DHCPoff;
 bool IP6off;
 bool DNSoff;
 bool fileServerOff;
-
+bool wpsOff;
 bool doStop;
 esp_netif_t *s_sta_netif = NULL;
 volatile connectStatus_t connectStatus;
@@ -180,10 +180,10 @@ static void setStaticIp(esp_netif_t *netif) {
 static bool wpsActive = false;
 static TimerHandle_t wpsTimer;
 
-//configTIMER_TASK_STACK_DEPTH 4096! if printing message
-// CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=
+// configTIMER_TASK_STACK_DEPTH 4096! if printing message
+//  CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=
 void wpsTimerCallback(TimerHandle_t xTimer) {
-//	ESP_LOGI(TAG, "WPS Timeout");
+	//	ESP_LOGI(TAG, "WPS Timeout");
 	if (connectStatus == WPS_ACTIVE)
 		connectStatus = WPS_TIMEOUT;
 }
@@ -310,6 +310,7 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 		case IP_EVENT_STA_GOT_IP: {
 			ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
 			sprintf(myIpAddress, IPSTR, IP2STR(&event->ip_info.ip));
+			wpsOff = true; // once wps after powerup
 
 			if (advSettings.fixedIPdigit > 0) { // check if the last digit of IP address = CONFIG_FIXED_LAST_IP_DIGIT
 				uint32_t addr = event->ip_info.ip.addr;
@@ -483,13 +484,21 @@ void connectTask(void *pvParameters) {
 				break;
 			case CONNECT_TIMEOUT:
 #ifdef CONFIG_WPS_ENABLED
-				step++;
-				connectStatus = WPS_ACTIVE;
-				ESP_LOGI(TAG, "WPS Active");
-				ESP_ERROR_CHECK(esp_wifi_wps_enable(&wpsConfig));
-				ESP_ERROR_CHECK(esp_wifi_wps_start(0));
-				wpsActive = true;
-				startWpsTimer();
+				if (!wpsOff) {
+					step++;
+					connectStatus = WPS_ACTIVE;
+					ESP_LOGI(TAG, "WPS Active");
+					ESP_ERROR_CHECK(esp_wifi_wps_enable(&wpsConfig));
+					ESP_ERROR_CHECK(esp_wifi_wps_start(0));
+					wpsActive = true;
+					startWpsTimer();
+				}
+				else {
+					s_retry_num = 0; // keep trying 
+					esp_wifi_connect();
+					connectStatus = CONNECTING;
+					step = 1;
+				}
 				break;
 			default:
 				break;
