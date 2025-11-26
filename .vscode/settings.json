@@ -23,5 +23,5 @@
     "format": "cpp",
     "ostream": "cpp"
   },
-  "idf.monitorPort": "/dev/ttyACM0"
+  "idf.monitorPort": "/dev/ttyUSB1"
 }
