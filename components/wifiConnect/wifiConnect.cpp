@@ -468,6 +468,7 @@ void wifi_stop(void) {
 
 void connectTask(void *pvParameters) {
 	int step = 0;
+	int delay = 0;
 	while (1) {
 		switch (step) {
 		case 0:
@@ -544,13 +545,18 @@ void connectTask(void *pvParameters) {
 				if (!DNSoff)
 					initialiseMdns(userSettings.moduleName);
 				step++;
+				delay = 100; // = 1 sec
 				break;
 			default:
 				break;
 			}
 			break;
-
 		case 21:
+			delay--;
+			if ( delay <= 0)
+				step++;
+			break;			
+		case 22:
 			char str[200];
 			sprintf(str,
 					"WTWbox aangemeld\n"
@@ -560,7 +566,7 @@ void connectTask(void *pvParameters) {
 					"SW:\t%s\n"
 					"SPIFFS:\t%s\n",
 					(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion);
-			sendEmail(str);
+			sendEmail(str, (char *)wifiSettings.SSID);
 			connectStatus = CONNECT_READY;
 			step = 30;
 			break;

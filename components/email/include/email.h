@@ -1,3 +1,3 @@
 #include <esp_err.h>
 
-esp_err_t sendEmail( char * content);
+esp_err_t sendEmail( char * content, char * subj);

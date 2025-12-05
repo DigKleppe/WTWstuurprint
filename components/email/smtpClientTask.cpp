@@ -15,7 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-
 #if __has_include("../../passwords.h")
 #include "../../passwords.h"
 #else
@@ -47,6 +46,8 @@ static const char *TAG = "Email";
 
 #define TASK_STACK_SIZE (8 * 1024)
 #define BUF_SIZE 512
+
+char subj[33]; // ssid in subj
 
 #define CHECKRESULT_SET_ERROR(ret, min_valid_ret, max_valid_ret)                                                                                                                   \
 	do {                                                                                                                                                                           \
@@ -432,10 +433,12 @@ void smtpClientTask(void *pvParameters) {
 		ESP_LOGI(TAG, "Write Content");
 		/* We do not take action if message sending is partly failed. */
 		len = snprintf((char *)buf, BUF_SIZE,
-					   "From: %s\r\nSubject: WTW login\r\n"
+					   //   "From: %s\r\nSubject: WTW login\r\n"
+					   "From: %s\r\nSubject: %s\r\n"
 					   "To: %s\r\n"
 					   "MIME-Version: 1.0 (mime-construct 1.9)\n",
-					   "WTWbox", RECIPIENT_MAIL);
+					  // subj, "WTWbox", RECIPIENT_MAIL);
+					   subj, subj, RECIPIENT_MAIL);
 
 		/**
 		 * Note: We are not validating return for some ssl_writes.
@@ -444,8 +447,8 @@ void smtpClientTask(void *pvParameters) {
 		ret = write_ssl_data(&ssl, (unsigned char *)buf, len);
 
 		/* Text */
-		len = snprintf((char *)buf, BUF_SIZE,"Content-Type: text/plain\n");
-		len += snprintf((char *)buf+len, BUF_SIZE-len,(char *) pvParameters);
+		len = snprintf((char *)buf, BUF_SIZE, "Content-Type: text/plain\n");
+		len += snprintf((char *)buf + len, BUF_SIZE - len, (char *)pvParameters);
 		ret = write_ssl_data(&ssl, (unsigned char *)buf, len);
 
 		len = snprintf((char *)buf, BUF_SIZE, "\r\n.\r\n");
@@ -483,10 +486,12 @@ void smtpClientTask(void *pvParameters) {
 	vTaskDelete(NULL);
 }
 
-esp_err_t sendEmail(char *content) {
+esp_err_t sendEmail(char *content, char *ssid) {
 	emailIsSent = false;
+	strcpy(subj, ssid);
+
 	xTaskCreate(&smtpClientTask, "smtp_client_task", TASK_STACK_SIZE, (void *)content, 5, NULL);
-	while (! emailIsSent)
-		vTaskDelay( 10);
+	while (!emailIsSent)
+		vTaskDelay(10);
 	return ESP_OK;
 }

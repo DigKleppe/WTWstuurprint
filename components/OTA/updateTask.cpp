@@ -5,21 +5,21 @@
  *      Author: dig
  */
 
-#include <string.h>
-#include <inttypes.h>
 #include "errno.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
 #include "esp_log.h"
 #include "esp_ota_ops.h"
+#include "esp_system.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include <inttypes.h>
+#include <string.h>
 
-#include "wifiConnect.h"
-#include "settings.h"
 #include "httpsReadFile.h"
-#include "updateTask.h"
+#include "settings.h"
 #include "updateFirmWareTask.h"
 #include "updateSpiffsTask.h"
+#include "updateTask.h"
+#include "wifiConnect.h"
 
 static const char *TAG = "updateTask";
 
@@ -32,7 +32,6 @@ typedef struct {
 	char *dest;
 } versionInfoParam_t;
 
-
 esp_err_t getNewVersion(char *infoFileName, char *newVersion) {
 	char url[96];
 	int len;
@@ -41,9 +40,9 @@ esp_err_t getNewVersion(char *infoFileName, char *newVersion) {
 	strcat(url, "/");
 	strcat(url, infoFileName);
 
-	len = httpsReadFile( url, newVersion, MAX_STORAGEVERSIONSIZE-1);
-	
-	if (len >0) {
+	len = httpsReadFile(url, newVersion, MAX_STORAGEVERSIONSIZE - 1);
+
+	if (len > 0) {
 		newVersion[len] = 0;
 		return ESP_OK;
 	}
@@ -55,6 +54,7 @@ esp_err_t getNewVersion(char *infoFileName, char *newVersion) {
 void updateTask(void *pvParameter) {
 	int prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
 	bool doUpdate;
+	bool error = false;
 	char newVersion[MAX_STORAGEVERSIONSIZE];
 	TaskHandle_t updateFWTaskh;
 	TaskHandle_t updateSPIFFSTaskh;
@@ -65,21 +65,22 @@ void updateTask(void *pvParameter) {
 		saveSettings();
 	}
 
-	while( connectStatus != CONNECT_READY) 
-		vTaskDelay(1000/portTICK_PERIOD_MS);
+	while (connectStatus != CONNECT_READY)
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
 
 	const esp_partition_t *update_partition = NULL;
 	const esp_partition_t *configured = esp_ota_get_boot_partition();
 	const esp_partition_t *running = esp_ota_get_running_partition();
 
 	if (configured != running) {
-		ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08"PRIx32", but running from offset 0x%08"PRIx32, configured->address, running->address);
+		ESP_LOGW(TAG, "Configured OTA boot partition at offset 0x%08" PRIx32 ", but running from offset 0x%08" PRIx32, configured->address, running->address);
 		ESP_LOGW(TAG, "(This can happen if either the OTA boot data or preferred boot image become corrupted somehow.)");
 	}
-	ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08"PRIx32")", running->type, running->subtype, running->address);
+	ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08" PRIx32 ")", running->type, running->subtype, running->address);
 
 	while (1) {
 		doUpdate = false;
+		error = false;
 		getNewVersion(BINARY_INFO_FILENAME, newVersion);
 		if (newVersion[0] != 0) {
 			if (strcmp(newVersion, wifiSettings.firmwareVersion) != 0) {
@@ -87,8 +88,10 @@ void updateTask(void *pvParameter) {
 				doUpdate = true;
 			} else
 				ESP_LOGI(TAG, "Firmware up to date: %s", newVersion);
-		} else
+		} else {
 			ESP_LOGI(TAG, "Reading New firmware info failed");
+			error = true;
+		}
 
 		if (doUpdate) {
 			ESP_LOGI(TAG, "Updating firmware to version: %s", newVersion);
@@ -105,11 +108,12 @@ void updateTask(void *pvParameter) {
 				esp_restart();
 			} else {
 				ESP_LOGI(TAG, "Update firmware failed!");
-				vTaskDelay (10000/portTICK_PERIOD_MS);
+				vTaskDelay(10000 / portTICK_PERIOD_MS);
+				error = true;
 			}
 		}
 
-// ********************* SPIFFS update ***************************
+		// ********************* SPIFFS update ***************************
 
 		doUpdate = false;
 		getNewVersion(SPIFFS_INFO_FILENAME, newVersion);
@@ -119,8 +123,10 @@ void updateTask(void *pvParameter) {
 				doUpdate = true;
 			} else
 				ESP_LOGI(TAG, "SPIFFS up to date: %s", newVersion);
-		} else
+		} else {
 			ESP_LOGI(TAG, "Reading New SPIFFS info failed");
+			error = true;
+		}
 
 		if (doUpdate) {
 			ESP_LOGI(TAG, "Updating SPIFFS to version: %s", newVersion);
@@ -137,12 +143,13 @@ void updateTask(void *pvParameter) {
 			} else
 				ESP_LOGI(TAG, "Update SPIFFS failed!");
 		}
+		if  (error) {
+			prescaler = 60 * 60; // check over 1 hour
+		}
 		do {
 			vTaskDelay(1000 / portTICK_PERIOD_MS);
-		} while (prescaler-- && ! forceUpdate);
+		} while (prescaler-- && !forceUpdate);
 		forceUpdate = false;
 		prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
 	}
 }
-
-
