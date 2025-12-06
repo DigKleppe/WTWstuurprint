@@ -22,9 +22,10 @@ bool settingsChanged;
 char checkstr[MAX_STRLEN + 1];
 
 userSettings_t userSettingsDefaults = {"WTW", 1000, 15, 25, 0, 100, {5, 50, 100}, 10, 22, 2, {USERSETTINGS_CHECKSTR}};
-
 advancedSettings_t advancedSettingsDefaults = {0.2, 0.01, 40, {{14, 67}, {14, 67}}, 0.04, 0.02, 30, 0, 0, CONFIG_FIXED_LAST_IP_DIGIT, {ADVUSERSETTINGS_CHECKSTR}};
+systemInfo_t systemInfoDefaults = { 0,0,0,0,0,0,{SYSTEMINFO_CHECKSTR }};
 
+systemInfo_t systemInfo;
 userSettings_t userSettings;
 advancedSettings_t advSettings;
 
@@ -44,6 +45,7 @@ esp_err_t saveSettings(void) {
 		err = nvs_set_blob(my_handle, "WifiSettings", (const void *)&wifiSettings, sizeof(wifiSettings_t));
 		err |= nvs_set_blob(my_handle, "userSettings", (const void *)&userSettings, sizeof(userSettings_t));
 		err |= nvs_set_blob(my_handle, "advSettings", (const void *)&advSettings, sizeof(advancedSettings_t));
+		err |= nvs_set_blob(my_handle, "systemInfo", (const void *)&systemInfo, sizeof(systemInfo_t));
 		switch (err) {
 		case ESP_OK:
 			ESP_LOGI(TAG, "settings written");
@@ -82,6 +84,8 @@ esp_err_t loadSettings() {
 		err |= nvs_get_blob(my_handle, "userSettings", (void *)&userSettings, &len);
 		len = sizeof(advancedSettings_t);
 		err |= nvs_get_blob(my_handle, "advSettings",(void *) &advSettings, &len);
+		len = sizeof(systemInfo_t);
+		err |= nvs_get_blob(my_handle, "systemInfo",(void *) &systemInfo, &len);
 
 		if (advSettings.CO2PIDmaxI == 90) {//old value
 			advSettings.CO2PIDmaxI = advancedSettingsDefaults.CO2PIDmaxI; // workaround
@@ -116,6 +120,12 @@ esp_err_t loadSettings() {
 	if (strncmp(advSettings.checkstr, ADVUSERSETTINGS_CHECKSTR, strlen(ADVUSERSETTINGS_CHECKSTR)) != 0) {
 		advSettings = advancedSettingsDefaults;
 		ESP_LOGE(TAG, "default advanced settings loaded");
+		doSave = true;
+	}
+
+	if (strncmp(systemInfo.checkstr, SYSTEMINFO_CHECKSTR, strlen(SYSTEMINFO_CHECKSTR)) != 0) {
+		systemInfo =  systemInfoDefaults;
+		ESP_LOGE(TAG, "default systemInfo loaded");
 		doSave = true;
 	}
 

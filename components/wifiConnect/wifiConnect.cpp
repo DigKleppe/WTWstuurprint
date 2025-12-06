@@ -484,7 +484,10 @@ void connectTask(void *pvParameters) {
 				step = 20;
 				break;
 			case CONNECT_TIMEOUT:
-#ifdef CONFIG_WPS_ENABLED
+			#ifdef CONFIG_WPS_ENABLED
+				if (esp_reset_reason() == ESP_RST_SW) // no wps if rebooted from checksystemtask
+					wpsOff = true;
+				
 				if (!wpsOff) {
 					step++;
 					connectStatus = WPS_ACTIVE;

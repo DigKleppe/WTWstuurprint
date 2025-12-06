@@ -16,18 +16,63 @@
 #include "updateTask.h"
 #include "wifiConnect.h"
 
+#include "ping.h"
+
 static const char *TAG = "systemCheck";
 #define MOTORERRORREACTTIME 120 // seconds to make motorError permanent
+#define WIFITIMEOUT (15 * 60)	// reboot after this time in seconds
 
 static int err;
+static bool noSensorsReceived;
 
-// Task to check system status, e.g., temperature sensors
+void checkWifi(void) {
+	static bool onAir = false;
+	static int sensorTimeoutCntr = 0;
+	static int oldPingOkCntr;
+	bool reboot = false;
+	if (connectStatus == CONNECT_READY)
+		onAir = true;
+	if (onAir) {
+
+		if( oldPingOkCntr != pingOKCntr) // from pingTask
+			oldPingOkCntr = pingOKCntr;
+		else
+			pingTimeoutCntr+=1; 
+
+		if (pingTimeoutCntr > WIFITIMEOUT) {
+			systemInfo.pingTimeOuts++;
+			ESP_LOGI(TAG, "Wifi ping failed, restarting system");
+			reboot = true;
+		}
+		if (noSensorsReceived)
+			sensorTimeoutCntr++;
+		else
+			sensorTimeoutCntr = 0;
+
+		if (sensorTimeoutCntr > WIFITIMEOUT) {
+			ESP_LOGI(TAG, "No sensors received, restarting system");
+			systemInfo.sensorTimeOuts++;
+			reboot = true;
+		}
+		if (reboot) {
+		//	saveSettings();
+			vTaskDelay(200 / portTICK_PERIOD_MS);
+			esp_restart();
+		}
+	}
+}
+
+// Task to check system status, e.g., temperature sensors and wifi
 void systemCheckTask(void *pvParameters) {
 	int nrSensors;
 	int motorErrorTimer = MOTORERRORREACTTIME;
 	int motorError = 0;
 	bool motorErrorAccepted = false;
+
+	xTaskCreate(pingTask, "pingTask", configMINIMAL_STACK_SIZE * 5, NULL, 1, NULL);
+
 	while (1) {
+		checkWifi();
 		err = 0;
 		if (updateStatus == UPDATE_BUSY)
 			D1color = COLOR_YELLOW;
@@ -110,8 +155,13 @@ void systemCheckTask(void *pvParameters) {
 			if (nrSensors < userSettings.nrSensors) {
 				// snprintf(tempMessage + strlen(tempMessage), BUFSIZE, "Sensor fout\n");
 				err = 5;
+				if (nrSensors == 0)
+					noSensorsReceived = true;
+				else
+					noSensorsReceived = false;
 			}
-			for (int n = 1; n < userSettings.nrSensors; n++) {  // sensor[0] is reference , skip
+
+			for (int n = 1; n < userSettings.nrSensors; n++) { // sensor[0] is reference , skip
 				if ((sensorInfo[n].CO2val < 300) || (sensorInfo[n].CO2val > 20000))
 					err = 5;
 			}

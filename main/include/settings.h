@@ -19,6 +19,7 @@
 #define MAX_STRLEN 32
 #define USERSETTINGS_CHECKSTR "test"
 #define ADVUSERSETTINGS_CHECKSTR "test3"
+#define SYSTEMINFO_CHECKSTR "test"
 
 typedef struct {
 	char moduleName[MAX_STRLEN + 1];
@@ -48,6 +49,15 @@ typedef struct {
 	char checkstr[MAX_STRLEN + 1];
 } advancedSettings_t;
 
+typedef struct {
+	uint32_t sensorTimeOuts;
+	uint32_t pingTimeOuts;
+	uint32_t spare1;
+	uint32_t spare2;
+	uint32_t spare3;
+	uint32_t spare4;
+	char checkstr[MAX_STRLEN + 1];
+}systemInfo_t;
 
 typedef struct {
 	varType_t varType;
@@ -60,6 +70,7 @@ typedef struct {
 extern bool settingsChanged;
 extern userSettings_t userSettings;
 extern advancedSettings_t advSettings;
+extern systemInfo_t systemInfo;
 
 #ifdef __cplusplus
 extern "C" {
