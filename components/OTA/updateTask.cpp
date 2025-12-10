@@ -50,14 +50,17 @@ esp_err_t getNewVersion(char *infoFileName, char *newVersion) {
 	else
 		return ESP_FAIL;
 }
+// must run with DHCP! DNS does not work , depending on modem
 
 void updateTask(void *pvParameter) {
-	int prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
+//	int prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
 	bool doUpdate;
 	bool error = false;
 	char newVersion[MAX_STORAGEVERSIONSIZE];
 	TaskHandle_t updateFWTaskh;
 	TaskHandle_t updateSPIFFSTaskh;
+
+	ESP_LOGI(TAG, "Running");
 
 	if ((strcmp(wifiSettings.upgradeFileName, CONFIG_FIRMWARE_UPGRADE_FILENAME) != 0) || (strcmp(wifiSettings.upgradeURL, CONFIG_DEFAULT_FIRMWARE_UPGRADE_URL) != 0)) {
 		strcpy(wifiSettings.upgradeFileName, CONFIG_FIRMWARE_UPGRADE_FILENAME);
@@ -65,8 +68,8 @@ void updateTask(void *pvParameter) {
 		saveSettings();
 	}
 
-	while (connectStatus != CONNECT_READY)
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
+	// while (connectStatus != CONNECT_READY)
+	// 	vTaskDelay(1000 / portTICK_PERIOD_MS);
 
 	const esp_partition_t *update_partition = NULL;
 	const esp_partition_t *configured = esp_ota_get_boot_partition();
@@ -78,7 +81,7 @@ void updateTask(void *pvParameter) {
 	}
 	ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08" PRIx32 ")", running->type, running->subtype, running->address);
 
-	while (1) {
+//	while (1) {
 		doUpdate = false;
 		error = false;
 		getNewVersion(BINARY_INFO_FILENAME, newVersion);
@@ -143,13 +146,15 @@ void updateTask(void *pvParameter) {
 			} else
 				ESP_LOGI(TAG, "Update SPIFFS failed!");
 		}
-		if  (error) {
-			prescaler = 60 * 60; // check over 1 hour
-		}
-		do {
-			vTaskDelay(1000 / portTICK_PERIOD_MS);
-		} while (prescaler-- && !forceUpdate);
-		forceUpdate = false;
-		prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
-	}
+		vTaskDelete(NULL); 
+
+	// 	if  (error) {
+	// 		prescaler = 60 * 60; // check over 1 hour
+	// 	}
+	// 	do {
+	// 		vTaskDelay(1000 / portTICK_PERIOD_MS);
+	// 	} while (prescaler-- && !forceUpdate);
+	// 	forceUpdate = false;
+	// 	prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
+	// }
 }

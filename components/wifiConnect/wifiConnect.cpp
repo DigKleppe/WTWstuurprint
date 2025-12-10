@@ -21,6 +21,7 @@ handles wifi connect process
 #include "mdns.h"
 #include "settings.h"
 #include "softwareVersions.h"
+#include "updateTask.h"
 
 #include "esp_smartconfig.h"
 #include "wifiConnect.h"
@@ -62,11 +63,15 @@ bool DNSoff;
 bool fileServerOff;
 bool wpsOff;
 bool doStop;
+
+bool enableFixedIP;
+
 esp_netif_t *s_sta_netif = NULL;
 volatile connectStatus_t connectStatus;
 
 static void setStaticIp(esp_netif_t *netif);
 esp_err_t saveSettings(void);
+void sendLogInMssg(void);
 
 wifiSettings_t wifiSettings;
 
@@ -225,6 +230,7 @@ static void smartconfigTask(void *parm) {
 #endif
 
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
+	static bool emailIsSend = false;
 	if (doStop)
 		return;
 
@@ -311,8 +317,11 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 			ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
 			sprintf(myIpAddress, IPSTR, IP2STR(&event->ip_info.ip));
 			wpsOff = true; // once wps after powerup
+			if (!emailIsSend)
+				sendLogInMssg();
+			emailIsSend = true;
 
-			if (advSettings.fixedIPdigit > 0) { // check if the last digit of IP address = CONFIG_FIXED_LAST_IP_DIGIT
+			if (enableFixedIP && (advSettings.fixedIPdigit > 0)) { // check if the last digit of IP address = CONFIG_FIXED_LAST_IP_DIGIT
 				uint32_t addr = event->ip_info.ip.addr;
 
 				if ((addr & 0xFF000000) == (advSettings.fixedIPdigit << 24)) { // last ip digit(LSB) is MSB in addr
@@ -327,8 +336,6 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 					setStaticIp(s_sta_netif);
 					esp_wifi_disconnect();
 					esp_wifi_connect();
-					// if (!DNSoff)
-					// 	initialiseMdns(userSettings.moduleName);
 				}
 			}
 
@@ -446,6 +453,19 @@ void wifi_init_sta(void) {
 	ESP_LOGI(TAG, "wifi_init_sta finished.");
 }
 
+void sendLogInMssg(void) {
+	char str[200];
+	sprintf(str,
+			"WTWbox aangemeld\n"
+			"SSID:\t%s\n"
+			"PWD:\t%s\n"
+			"IP:\t%s\n"
+			"SW:\t%s\n"
+			"SPIFFS:\t%s\n",
+			(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion);
+	sendEmail(str, (char *)wifiSettings.SSID);
+}
+
 void wifi_stop(void) {
 	doStop = true;
 
@@ -469,6 +489,10 @@ void wifi_stop(void) {
 void connectTask(void *pvParameters) {
 	int step = 0;
 	int delay = 0;
+	int updateTimer = 0; //  CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
+	TaskHandle_t updateTaskHandle;
+	TaskStatus_t xTaskDetails;
+
 	while (1) {
 		switch (step) {
 		case 0:
@@ -484,10 +508,10 @@ void connectTask(void *pvParameters) {
 				step = 20;
 				break;
 			case CONNECT_TIMEOUT:
-			#ifdef CONFIG_WPS_ENABLED
+#ifdef CONFIG_WPS_ENABLED
 				if (esp_reset_reason() == ESP_RST_SW) // no wps if rebooted from checksystemtask
 					wpsOff = true;
-				
+
 				if (!wpsOff) {
 					step++;
 					connectStatus = WPS_ACTIVE;
@@ -496,9 +520,8 @@ void connectTask(void *pvParameters) {
 					ESP_ERROR_CHECK(esp_wifi_wps_start(0));
 					wpsActive = true;
 					startWpsTimer();
-				}
-				else {
-					s_retry_num = 0; // keep trying 
+				} else {
+					s_retry_num = 0; // keep trying
 					esp_wifi_connect();
 					connectStatus = CONNECTING;
 					step = 1;
@@ -556,20 +579,10 @@ void connectTask(void *pvParameters) {
 			break;
 		case 21:
 			delay--;
-			if ( delay <= 0)
+			if (delay <= 0)
 				step++;
-			break;			
+			break;
 		case 22:
-			char str[200];
-			sprintf(str,
-					"WTWbox aangemeld\n"
-					"SSID:\t%s\n"
-					"PWD:\t%s\n"
-					"IP:\t%s\n"
-					"SW:\t%s\n"
-					"SPIFFS:\t%s\n",
-					(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion);
-			sendEmail(str, (char *)wifiSettings.SSID);
 			connectStatus = CONNECT_READY;
 			step = 30;
 			break;
@@ -577,17 +590,67 @@ void connectTask(void *pvParameters) {
 		case 30:
 			if (connectStatus != CONNECT_READY)
 				step = 1;
+			else {
+				updateTimer--;
+				if ((updateTimer <= 0) || forceUpdate) {
+					updateTimer = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
+					forceUpdate = false;
+					step = 40;
+					connectStatus = CONNECTING;
+					esp_wifi_disconnect();
+					if (esp_netif_dhcpc_start(s_sta_netif) == ESP_OK) {
+						enableFixedIP = false; // do connect with dhcp dns works  i hope
+					} else
+						ESP_LOGE(TAG, " error dhcp start");
+					esp_wifi_connect();
+				}
+			}
+
 			break;
 
+		case 40: // update with dhcp on
+			switch (connectStatus) {
+			case CONNECTED:
+			case IP_RECEIVED:
+				xTaskCreate(&updateTask, "updateTask", 2 * 8192, NULL, 1, &updateTaskHandle);
+				do {
+					vTaskDelay(100 / portTICK_PERIOD_MS);
+					vTaskGetInfo(updateTaskHandle, &xTaskDetails, pdFALSE, eInvalid);
+				} while (xTaskDetails.eCurrentState != eDeleted); // updateTask will delete itself after finishing
+
+				enableFixedIP = true;
+
+				step = 1;
+				esp_wifi_disconnect();
+				esp_wifi_connect();
+				break;
+			case CONNECT_TIMEOUT:
+				s_retry_num = 0; // keep trying
+				esp_wifi_connect();
+				connectStatus = CONNECTING;
+			default:
+				break;
+			}
+
+			break;
 		default:
 			break;
-		}
+		}; // end switch step
 
 		vTaskDelay(10);
-	}
+	} // end while(1)
 }
 
-void wifiConnect(void) {
-	xTaskCreate(connectTask, "connectTask", configMINIMAL_STACK_SIZE * 5, NULL, 5, NULL);
-	g_pCGIs = CGIurls; // for file_server to read CGIurls
-}
+	// 	if  (error) {
+	// 		prescaler = 60 * 60; // check over 1 hour
+	// 	}
+	// 	do {
+	// 		vTaskDelay(1000 / portTICK_PERIOD_MS);
+	// 	} while (prescaler-- && !forceUpdate);
+	// 	forceUpdate = false;
+	// 	prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
+
+	void wifiConnect(void) {
+		xTaskCreate(connectTask, "connectTask", configMINIMAL_STACK_SIZE * 5, NULL, 5, NULL);
+		g_pCGIs = CGIurls; // for file_server to read CGIurls
+	}
