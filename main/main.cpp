@@ -84,7 +84,6 @@ extern "C" void app_main() {
 		return;
 	}
 	err = loadSettings();
-	strcpy (wifiSettings.firmwareVersion, "0.0"); 
 
 	if (gpio_get_level ( IPDIGITPIN) == 0){ // then link placed on J2 9-10 for local test
 		strcpy(userSettings.moduleName,"WTW2");
