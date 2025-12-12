@@ -28,7 +28,7 @@ const static char *TAG = "ping";
 #define PINGINTERVAL 60 // seconds
 
 volatile int pingOKCntr = 0;
-volatile int pingTimeoutCntr = 0;
+
 
 static void test_on_ping_success(esp_ping_handle_t hdl, void *args) {
 	// optionally, get callback arguments
@@ -46,7 +46,6 @@ static void test_on_ping_success(esp_ping_handle_t hdl, void *args) {
 	//printf("%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\n",(int) recv_len, inet_ntoa(target_addr.u_addr.ip4), (int) seqno, ttl,(int)  elapsed_time);
 	ESP_LOGI(TAG,"%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\n",(int) recv_len, inet_ntoa(target_addr.u_addr.ip4), (int) seqno, ttl,(int)  elapsed_time);
 	pingOKCntr += 1;
-    pingTimeoutCntr = 0;
 }
 
 static void test_on_ping_timeout(esp_ping_handle_t hdl, void *args) {
@@ -56,7 +55,6 @@ static void test_on_ping_timeout(esp_ping_handle_t hdl, void *args) {
 	esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
 //	printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), (int) seqno);
 	ESP_LOGE(TAG,"From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), (int) seqno);
-	pingTimeoutCntr += PINGINTERVAL;
 }
 
 static void test_on_ping_end(esp_ping_handle_t hdl, void *args) {
@@ -75,7 +73,6 @@ void pingTask(void *pvParameters) {
 
     while ( connectStatus != CONNECT_READY) {
         vTaskDelay( 1000/portTICK_PERIOD_MS);
-        pingTimeoutCntr+=1;
     }
 
 	esp_ping_config_t ping_config = ESP_PING_DEFAULT_CONFIG();

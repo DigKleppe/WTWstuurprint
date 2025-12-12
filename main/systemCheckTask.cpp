@@ -20,7 +20,7 @@
 
 static const char *TAG = "systemCheck";
 #define MOTORERRORREACTTIME 120 // seconds to make motorError permanent
-#define WIFITIMEOUT (15 * 60)	// reboot after this time in seconds
+#define WIFITIMEOUT (10 * 60)	// reboot after this time in seconds
 
 static int err;
 static bool noSensorsReceived;
@@ -29,13 +29,16 @@ void checkWifi(void) {
 	static bool onAir = false;
 	static int sensorTimeoutCntr = 0;
 	static int oldPingOkCntr;
+	static int pingTimeoutCntr = 0;
 	bool reboot = false;
-	if (connectStatus == CONNECT_READY)
-		onAir = true;
-	if (onAir) {
+	// if (connectStatus == CONNECT_READY)
+	// 	onAir = true;
+	// if (onAir) {
 
-		if( oldPingOkCntr != pingOKCntr) // from pingTask
+		if( oldPingOkCntr != pingOKCntr) { // from pingTask
 			oldPingOkCntr = pingOKCntr;
+			pingTimeoutCntr = 0;
+		}
 		else
 			pingTimeoutCntr+=1; 
 
@@ -59,7 +62,7 @@ void checkWifi(void) {
 			vTaskDelay(200 / portTICK_PERIOD_MS);
 			esp_restart();
 		}
-	}
+//	}
 }
 
 // Task to check system status, e.g., temperature sensors and wifi
