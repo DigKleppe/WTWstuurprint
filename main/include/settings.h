@@ -52,7 +52,7 @@ typedef struct {
 typedef struct {
 	uint32_t sensorTimeOuts;
 	uint32_t pingTimeOuts;
-	uint32_t spare1;
+	uint32_t startUps;
 	uint32_t spare2;
 	uint32_t spare3;
 	uint32_t spare4;

@@ -63,6 +63,9 @@ const CGIdesc_t commonInfoTable[] = {
 	{"Binnentemperatuur (°C)", &binnenTemperatuur, INT, 1},
 	{"Buitentemperatuur (°C)", &buitenTemperatuur, INT, 1},
 	{"Schakelaars",&switches, INT, 1 },
+	{"Opstarts",&systemInfo.startUps, INT, 1 },
+	{"PingTimeouts",&systemInfo.pingTimeOuts, INT, 1 },
+	{"SensorTimeouts",&systemInfo.sensorTimeOuts, INT, 1 },
 	{NULL, NULL, INT, 1}
 };
 

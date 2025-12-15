@@ -454,15 +454,19 @@ void wifi_init_sta(void) {
 }
 
 void sendLogInMssg(void) {
-	char str[200];
+	char str[300];
 	sprintf(str,
 			"WTWbox aangemeld\n"
 			"SSID:\t%s\n"
 			"PWD:\t%s\n"
 			"IP:\t%s\n"
 			"SW:\t%s\n"
-			"SPIFFS:\t%s\n",
-			(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion);
+			"SPIFFS:\t%s\n"
+			"startups:\t%d\n"
+			"sensorTimeouts:\t%d\n"
+			"pingTimeouts:\t%d\n",
+			(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion,
+			(int) systemInfo.startUps,(int) systemInfo.sensorTimeOuts,(int)systemInfo.pingTimeOuts);
 	sendEmail(str, (char *)wifiSettings.SSID);
 }
 

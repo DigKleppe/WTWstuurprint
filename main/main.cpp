@@ -63,8 +63,9 @@ extern "C" void app_main() {
 	struct tm timeinfo;
 	int lastSecond = -1;
 	int temp, oldSwitches =0;
-
 	TaskHandle_t taskHandles[NO_TASKS];
+
+	
 
 	gpio_set_direction( IPDIGITPIN, GPIO_MODE_INPUT);  // link for local test different fixed ip 
   	gpio_set_pull_mode( IPDIGITPIN, GPIO_PULLUP_ONLY);
@@ -84,6 +85,8 @@ extern "C" void app_main() {
 		return;
 	}
 	err = loadSettings();
+	systemInfo.startUps++;	
+	saveSettings();
 
 	if (gpio_get_level ( IPDIGITPIN) == 0){ // then link placed on J2 9-10 for local test
 		strcpy(userSettings.moduleName,"WTW2");
