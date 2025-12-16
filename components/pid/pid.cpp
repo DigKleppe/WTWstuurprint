@@ -52,15 +52,15 @@ float Pid::update ( float measuredValue ){
 		if (iSum < _iMin) // or negative value
 			iSum = _iMin;
 	}
-	if ( _id == 1)
-		printf("\ndelta: %f P:%f I:%f ", delta, result, iSum);
+	// if ( _id == 1)
+	// 	printf("\ndelta: %f P:%f I:%f ", delta, result, iSum);
 
 	result += iSum;
 	result += (measuredValue-oldMeasuredValue) * D;
 	oldMeasuredValue = measuredValue;
 
-	if ( _id == 1)
-		printf( "PID %%: %1.1f\n\r",  result);
+	// if ( _id == 1)
+	// 	printf( "PID %%: %1.1f\n\r",  result);
 	
 	return result;
 }

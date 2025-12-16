@@ -179,7 +179,7 @@ void motorControlTask(void *pvParameters) {
 			setpointPWM = ((float(RPMSetpoint) / MAXRPM) * (maxPWM - minPWM)) + minPWM;
 			setPWMpercent(PWMchannelList[id], setpointPWM);
 			motor[id].actualPWM = setpointPWM;
-			printf("setpointPWM %d: %f\r\n", (int)id, setpointPWM);
+		//	printf("setpointPWM %d: %f\r\n", (int)id, setpointPWM);
 
 			for (int n = 0; n < 20; n++) {
 				lastRPM = getRPM(id);
@@ -198,7 +198,7 @@ void motorControlTask(void *pvParameters) {
 						setPWMpercent(PWMchannelList[id], setpointPWM);
 					}
 				}
-				printf("stabiliseren %d: %d %d\r\n", (int)id, n + 1, getRPM(id));
+			//	printf("stabiliseren %d: %d %d\r\n", (int)id, n + 1, getRPM(id));
 			}
 
 			for (int n = 0; n < 10; n++) {
@@ -209,7 +209,7 @@ void motorControlTask(void *pvParameters) {
 					setpointPWM++;
 				setPWMpercent(PWMchannelList[id], setpointPWM);
 				motor[id].actualPWM = setpointPWM;
-				printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM);
+			//	printf("coarse %d: %d %d %2.1f \r\n", (int)id, n + 1, getRPM(id), setpointPWM);
 				motor[id].actualRPM = getRPM(id); // for CGI
 				calcRPMpercent(id);
 			}

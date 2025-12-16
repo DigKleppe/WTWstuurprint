@@ -32,6 +32,7 @@ static const char *TAG = "main";
 
 uint32_t timeStamp = 1; // global timestamp for logging
 int switches; // for CGI
+int resetCause;
 
 myKey_t getKeyPins(void) { 
    uint32_t port =  REG_READ(GPIO_IN_REG);
@@ -64,9 +65,8 @@ extern "C" void app_main() {
 	int lastSecond = -1;
 	int temp, oldSwitches =0;
 	TaskHandle_t taskHandles[NO_TASKS];
-
+	resetCause = (int) esp_reset_reason(); 
 	
-
 	gpio_set_direction( IPDIGITPIN, GPIO_MODE_INPUT);  // link for local test different fixed ip 
   	gpio_set_pull_mode( IPDIGITPIN, GPIO_PULLUP_ONLY);
 

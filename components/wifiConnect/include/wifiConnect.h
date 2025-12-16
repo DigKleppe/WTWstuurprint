@@ -61,10 +61,13 @@ typedef enum {
 	WPS_FAILED,
 	WPS_TIMEOUT,
 	IP_RECEIVED,
+	CHECKFIRMWARE,
 	CONNECT_READY
 } connectStatus_t;
 
 extern volatile  connectStatus_t connectStatus;
+extern uint32_t connectRetries;
+extern uint32_t disconnects;
 
 void wifiConnect (void);
 

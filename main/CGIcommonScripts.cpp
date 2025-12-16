@@ -19,6 +19,8 @@ extern int switches;
 
 #include "esp_log.h"
 extern int scriptState;
+extern int resetCause;
+extern int pingFailedCntr;
 static int rssi;
 
 const char firmWareVersion[] = FIRMWARE_VERSION;
@@ -65,7 +67,11 @@ const CGIdesc_t commonInfoTable[] = {
 	{"Schakelaars",&switches, INT, 1 },
 	{"Opstarts",&systemInfo.startUps, INT, 1 },
 	{"PingTimeouts",&systemInfo.pingTimeOuts, INT, 1 },
+	{"PingFailed",&pingFailedCntr, INT, 1 },
 	{"SensorTimeouts",&systemInfo.sensorTimeOuts, INT, 1 },
+	{"ConnectRetries",&connectRetries, INT, 1 },
+	{"Disconnects",&disconnects, INT, 1 },
+	{"ResetOorzaak", &resetCause, INT, 1},
 	{NULL, NULL, INT, 1}
 };
 

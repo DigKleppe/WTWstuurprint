@@ -55,6 +55,7 @@ static int s_retry_num = 0;
 void initialiseMdns(char *hostName);
 esp_err_t start_file_server(const char *base_path);
 extern const tCGI CGIurls[];
+extern int resetCause;
 
 char myIpAddress[16];
 bool DHCPoff;
@@ -68,6 +69,8 @@ bool enableFixedIP;
 
 esp_netif_t *s_sta_netif = NULL;
 volatile connectStatus_t connectStatus;
+uint32_t connectRetries;
+uint32_t disconnects;
 
 static void setStaticIp(esp_netif_t *netif);
 esp_err_t saveSettings(void);
@@ -243,6 +246,7 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 			esp_wifi_connect();
 			break;
 		case WIFI_EVENT_STA_DISCONNECTED:
+			disconnects++;
 			ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
 			if (s_retry_num < MAX_RETRY_ATTEMPTS) {
 				esp_wifi_connect();
@@ -338,7 +342,6 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 					esp_wifi_connect();
 				}
 			}
-
 			else {
 				connectStatus = IP_RECEIVED;
 				xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
@@ -464,9 +467,10 @@ void sendLogInMssg(void) {
 			"SPIFFS:\t%s\n"
 			"startups:\t%d\n"
 			"sensorTimeouts:\t%d\n"
-			"pingTimeouts:\t%d\n",
+			"pingTimeouts:\t%d\n"
+			"resetCause:\t%d\n",
 			(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion,
-			(int) systemInfo.startUps,(int) systemInfo.sensorTimeOuts,(int)systemInfo.pingTimeOuts);
+			(int) systemInfo.startUps,(int) systemInfo.sensorTimeOuts,(int)systemInfo.pingTimeOuts, resetCause);
 	sendEmail(str, (char *)wifiSettings.SSID);
 }
 
@@ -527,6 +531,7 @@ void connectTask(void *pvParameters) {
 				} else {
 					s_retry_num = 0; // keep trying
 					esp_wifi_connect();
+					connectRetries++;
 					connectStatus = CONNECTING;
 					step = 1;
 				}
@@ -597,10 +602,10 @@ void connectTask(void *pvParameters) {
 			else {
 				updateTimer--;
 				if ((updateTimer <= 0) || forceUpdate) {
-					updateTimer = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
+					updateTimer = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60 * 10;
 					forceUpdate = false;
 					step = 40;
-					connectStatus = CONNECTING;
+					connectStatus = CHECKFIRMWARE; // CONNECTING
 					esp_wifi_disconnect();
 					if (esp_netif_dhcpc_start(s_sta_netif) == ESP_OK) {
 						enableFixedIP = false; // do connect with dhcp dns works  i hope
@@ -641,7 +646,7 @@ void connectTask(void *pvParameters) {
 			break;
 		}; // end switch step
 
-		vTaskDelay(10);
+		vTaskDelay(100);
 	} // end while(1)
 }
 
