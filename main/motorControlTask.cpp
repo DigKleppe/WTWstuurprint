@@ -216,7 +216,7 @@ void motorControlTask(void *pvParameters) {
 			xLastWakeTime = xTaskGetTickCount();
 
 			if (motor[id].actualRPM == 0) {
-				ESP_LOGE(TAG, "Geen toerental");
+			//	ESP_LOGE(TAG, "Geen toerental");
 				motor[id].status = MOTOR_FAIL;
 			} else
 				motor[id].status = MOTOR_OK;
@@ -260,13 +260,13 @@ void motorControlTask(void *pvParameters) {
 
 const CGIdesc_t motorInfoDescriptorTable[] = {
 	{"Afvoermotor toerental(%)", &motor[AFAN].actualRPMpercent, INT, 1},
-	{"Afvoermotor PWM", &motor[AFAN].actualPWM, FLT, 1},
-	{"Afvoermotor minPWM (%)", &advSettings.motorSettings[AFAN].minPWM, INT, 1},
-	{"Afvoermotor maxPWM (%)", &advSettings.motorSettings[AFAN].maxPWM, INT, 1},
+//	{"Afvoermotor PWM", &motor[AFAN].actualPWM, FLT, 1},
+//	{"Afvoermotor minPWM (%)", &advSettings.motorSettings[AFAN].minPWM, INT, 1},
+//	{"Afvoermotor maxPWM (%)", &advSettings.motorSettings[AFAN].maxPWM, INT, 1},
 	{"Toevoermotor toerental(%)", &motor[TFAN].actualRPMpercent, INT, 1},
-	{"Toevoermotor PWM", &motor[TFAN].actualPWM, FLT, 1},
-	{"Toevoermotor minPWM (%)", &advSettings.motorSettings[TFAN].minPWM, INT, 1},
-	{"Toevoermotor maxPWM (%)", &advSettings.motorSettings[TFAN].maxPWM, INT, 1},
+//	{"Toevoermotor PWM", &motor[TFAN].actualPWM, FLT, 1},
+//	{"Toevoermotor minPWM (%)", &advSettings.motorSettings[TFAN].minPWM, INT, 1},
+//	{"Toevoermotor maxPWM (%)", &advSettings.motorSettings[TFAN].maxPWM, INT, 1},
 	{NULL, NULL, FLT, 1},
 };
 

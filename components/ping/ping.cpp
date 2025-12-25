@@ -80,7 +80,7 @@ void pingTask(void *pvParameters) {
 	ping_config.target_addr.type = IPADDR_TYPE_V4;
 	ping_config.target_addr.u_addr.ip4 = (ip4_addr_t)wifiSettings.gw.addr;
 
-	ping_config.count = 2; // ESP_PING_COUNT_INFINITE;
+	ping_config.count = 1; // ESP_PING_COUNT_INFINITE;
 
 	/* set callback functions */
 	esp_ping_callbacks_t cbs;

@@ -21,48 +21,47 @@
 static const char *TAG = "systemCheck";
 #define MOTORERRORREACTTIME 120 // seconds to make motorError permanent
 #define WIFITIMEOUT (30 * 60)	// reboot after this time in seconds
+#define PINGTIMEOUT (5 * 60)	// restart wifi after this time in seconds
 
 static int err;
 static bool noSensorsReceived;
+// called every second
 
 void checkWifi(void) {
-	static bool onAir = false;
 	static int sensorTimeoutCntr = 0;
 	static int oldPingOkCntr;
 	static int pingTimeoutCntr = 0;
 	bool reboot = false;
-	// if (connectStatus == CONNECT_READY)
-	// 	onAir = true;
-	// if (onAir) {
 
-		if( oldPingOkCntr != pingOKCntr) { // from pingTask
-			oldPingOkCntr = pingOKCntr;
-			pingTimeoutCntr = 0;
-		}
-		else
-			pingTimeoutCntr+=1; 
+	if (oldPingOkCntr != pingOKCntr) { // from pingTask
+		oldPingOkCntr = pingOKCntr;
+		pingTimeoutCntr = 0;
+	} else
+		pingTimeoutCntr += 1;
 
-		if (pingTimeoutCntr > WIFITIMEOUT) {
-			systemInfo.pingTimeOuts++;
-			ESP_LOGI(TAG, "Wifi ping failed, restarting system");
-			reboot = true;
-		}
-		if (noSensorsReceived)
-			sensorTimeoutCntr++;
-		else
-			sensorTimeoutCntr = 0;
+	if (pingTimeoutCntr > PINGTIMEOUT) {
+		systemInfo.pingTimeOuts++;
+		pingTimeoutCntr = 0;
+		ESP_LOGE(TAG, "Wifi ping failed, restarting wifi");
+		restartWifi();
+	}
 
-		if (sensorTimeoutCntr > WIFITIMEOUT) {
-			ESP_LOGI(TAG, "No sensors received, restarting system");
-			systemInfo.sensorTimeOuts++;
-			reboot = true;
-		}
-		if (reboot) {
-			saveSettings();
-			vTaskDelay(200 / portTICK_PERIOD_MS);
-			esp_restart();
-		}
-//	}
+	if (noSensorsReceived)
+		sensorTimeoutCntr++;
+	else
+		sensorTimeoutCntr = 0;
+
+	if (sensorTimeoutCntr > WIFITIMEOUT) {
+		ESP_LOGE(TAG, "No sensors received, restarting system");
+		systemInfo.sensorTimeOuts++;
+		reboot = true;
+	}
+	if (reboot) {
+		saveSettings();
+		vTaskDelay(200 / portTICK_PERIOD_MS);
+		esp_restart();
+	}
+	//	}
 }
 
 // Task to check system status, e.g., temperature sensors and wifi
@@ -77,9 +76,11 @@ void systemCheckTask(void *pvParameters) {
 	while (1) {
 		checkWifi();
 		err = 0;
-		if (updateStatus == UPDATE_BUSY)
+	//	printf("CS:%d ",(int)connectStatus );
+		if (updateStatus == UPDATE_BUSY) {
+			onBoardColor = COLOR_YELLOW;
 			D1color = COLOR_YELLOW;
-		else {
+		} else {
 			switch ((int)connectStatus) {
 			case CONNECTING:
 				onBoardColor = COLOR_RED;
@@ -99,6 +100,7 @@ void systemCheckTask(void *pvParameters) {
 				break;
 
 			case CONNECT_READY:
+			case IP_RECEIVED:
 				onBoardFlash = false;
 				D1Flash = false;
 				onBoardColor = COLOR_GREEN;

@@ -8,19 +8,17 @@
 #ifndef WIFI_CONNECT_H_
 #define WIFI_CONNECT_H_
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_wifi.h"
-#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_netif.h"
-
+#include "esp_wifi.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 #define MAX_STORAGEVERSIONSIZE 16
-
 
 #define ESP_WIFI_SSID "test"
 #define ESP_WIFI_PASS "Yellowstone"
@@ -30,14 +28,13 @@ typedef struct {
 	char pwd[64];
 	esp_ip4_addr_t ip4Address;
 	esp_ip4_addr_t gw;
-	char upgradeServer[32] ; 
-	char upgradeURL[128]; 	 
-	char upgradeFileName[32]; 
+	char upgradeServer[32];
+	char upgradeURL[128];
+	char upgradeFileName[32];
 	char firmwareVersion[MAX_STORAGEVERSIONSIZE]; // holding current app version
-	char SPIFFSversion[MAX_STORAGEVERSIONSIZE];	// holding current spiffs version
+	char SPIFFSversion[MAX_STORAGEVERSIONSIZE];	  // holding current spiffs version
 	bool updated;
-}wifiSettings_t;
-
+} wifiSettings_t;
 
 extern wifiSettings_t wifiSettings;
 extern wifiSettings_t wifiSettingsDefaults;
@@ -45,8 +42,8 @@ extern char myIpAddress[];
 extern uint8_t lastIpDigit;
 
 #define STATIC_NETMASK_ADDR "255.255.255.0"
-#define DEFAULT_IPADDRESS 	"192.168.2.50"
-#define DEFAULT_GW		 	"192.168.2.1"
+#define DEFAULT_IPADDRESS "192.168.2.50"
+#define DEFAULT_GW "192.168.2.1"
 
 extern bool DHCPoff;
 extern bool DNSoff;
@@ -65,11 +62,12 @@ typedef enum {
 	CONNECT_READY
 } connectStatus_t;
 
-extern volatile  connectStatus_t connectStatus;
+extern volatile connectStatus_t connectStatus;
 extern uint32_t connectRetries;
 extern uint32_t disconnects;
 
-void wifiConnect (void);
+void wifiConnect(void);
+void restartWifi(void);
 
 #if !CONFIG_IDF_TARGET_LINUX
 #if CONFIG_EXAMPLE_CONNECT_WIFI
@@ -89,8 +87,7 @@ void wifiConnect (void);
 #define get_netif() get_netif_from_desc(EXAMPLE_NETIF_DESC_STA)
 #endif
 
-
-int getRssi(void);  
+int getRssi(void);
 esp_err_t disconnect(void);
 
 /**
@@ -112,7 +109,7 @@ esp_netif_t *get_netif_from_desc(const char *desc);
 
 #endif // !CONFIG_IDF_TARGET_LINUX
 
-#define CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY 	10
+#define CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY 10
 
 #if CONFIG_EXAMPLE_CONNECT_IPV6
 #define MAX_IP6_ADDRS_PER_NETIF (5)
@@ -129,7 +126,6 @@ esp_netif_t *get_netif_from_desc(const char *desc);
 
 #endif
 
-
 #if CONFIG_EXAMPLE_CONNECT_IPV6
 extern const char *ipv6_addr_types_to_str[6];
 #endif
@@ -144,7 +140,6 @@ void wifi_shutdown(void);
 esp_err_t wifi_connect(void);
 void ethernet_shutdown(void);
 esp_err_t ethernet_connect(void);
-
 
 #ifdef __cplusplus
 }
