@@ -20,7 +20,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
-#define LOG_LOCAL_LEVEL ESP_LOG_INFO // ESP_LOG_ERROR
+//#define LOG_LOCAL_LEVEL ESP_LOG_INFO // ESP_LOG_ERROR
 #include "esp_log.h"
 
 const static char *TAG = "ping";
@@ -67,7 +67,7 @@ static void test_on_ping_end(esp_ping_handle_t hdl, void *args) {
 	esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &received, sizeof(received));
 	esp_ping_get_profile(hdl, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
 	//	printf("%d packets transmitted, %d received, time %dms\n",(int) transmitted, (int) received, (int)total_time_ms);
-	ESP_LOGI(TAG, "%d packets transmitted, %d received, time %dms\n", (int)transmitted, (int)received, (int)total_time_ms);
+	//ESP_LOGI(TAG, "%d packets transmitted, %d received, time %dms\n", (int)transmitted, (int)received, (int)total_time_ms);
 }
 
 void pingTask(void *pvParameters) {
@@ -94,9 +94,7 @@ void pingTask(void *pvParameters) {
 	esp_ping_new_session(&ping_config, &cbs, &ping);
 
 	while (1) {
-		if (esp_ping_start(ping) == ESP_OK)
-			ESP_LOGI(TAG, "ping");
-		else
+		if (esp_ping_start(ping) != ESP_OK)
 			ESP_LOGE(TAG, "ping start failed");
 
 		vTaskDelay(PINGINTERVAL * 1000 / portTICK_PERIOD_MS);

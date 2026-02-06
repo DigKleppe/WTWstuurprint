@@ -17,7 +17,7 @@
 esp_err_t getNewVersion (char * infoFileName , char * newVersion);
 void updateTask(void *pvParameter);
 extern volatile bool forceUpdate;
-extern volatile bool getNewVersionTaskFinished;
+extern volatile bool updateTaskHasFinished;
 
 typedef enum {UPDATE_RDY, UPDATE_BUSY, UPDATE_ERROR } updateStatus_t;
 extern volatile updateStatus_t updateStatus;

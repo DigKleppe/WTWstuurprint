@@ -101,6 +101,9 @@ void updateSpiffsTask(void *pvParameter) {
 	else
 		updateStatus = UPDATE_ERROR;
 
+	ESP_LOGI(TAG, "finished");
+	vTaskDelay(10);
+
 	vTaskDelete (NULL);
 
 }

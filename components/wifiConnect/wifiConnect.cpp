@@ -64,6 +64,7 @@ bool DNSoff;
 bool fileServerOff;
 bool wpsOff;
 bool doStop;
+volatile bool staticIPisSet;
 
 bool enableFixedIP;
 
@@ -234,6 +235,7 @@ static void smartconfigTask(void *parm) {
 
 static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data) {
 	static bool emailIsSend = false;
+	static bool saveOnce = false;
 	if (doStop)
 		return;
 
@@ -331,20 +333,24 @@ static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_
 				if ((addr & 0xFF000000) == (advSettings.fixedIPdigit << 24)) { // last ip digit(LSB) is MSB in addr
 					xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);	   // ok
 					connectStatus = IP_RECEIVED;
+					staticIPisSet = true;
 				} else {
 					wifiSettings.ip4Address = (esp_ip4_addr_t)((addr & 0x00FFFFFF) + (advSettings.fixedIPdigit << 24));
 					sprintf(myIpAddress, IPSTR, IP2STR(&wifiSettings.ip4Address));
 					wifiSettings.gw = event->ip_info.gw;
-					saveSettings();
+					if ( !saveOnce) {
+						saveSettings();
+						saveOnce = true;
+					}
 					ESP_LOGI(TAG, "Set static IP to %s , reconnecting", (myIpAddress));
 					setStaticIp(s_sta_netif);
 					esp_wifi_disconnect();
 					esp_wifi_connect();
 					connectStatus = IP_RECEIVED;
+					staticIPisSet = false;
 				}
 
-			}
-			else {
+			} else {
 				connectStatus = IP_RECEIVED;
 				xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
 				// if (!DNSoff)
@@ -461,7 +467,7 @@ void sendLogInMssg(void) {
 	sprintf(str,
 			"WTWbox aangemeld\n"
 			"SSID:\t%s\n"
-		//	"PWD:\t%s\n"
+			//	"PWD:\t%s\n"
 			"IP:\t%s\n"
 			"SW:\t%s\n"
 			"SPIFFS:\t%s\n"
@@ -470,8 +476,8 @@ void sendLogInMssg(void) {
 			"pingTimeouts:\t%d\n"
 			"resetCause:\t%d\n",
 			(char *)wifiSettings.SSID, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion,
-		//	(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion,
-			(int) systemInfo.startUps,(int) systemInfo.sensorTimeOuts,(int)systemInfo.pingTimeOuts, resetCause);
+			//	(char *)wifiSettings.SSID, (char *)wifiSettings.pwd, myIpAddress, wifiSettings.firmwareVersion, wifiSettings.SPIFFSversion,
+			(int)systemInfo.startUps, (int)systemInfo.sensorTimeOuts, (int)systemInfo.pingTimeOuts, resetCause);
 	sendEmail(str, (char *)wifiSettings.SSID);
 }
 
@@ -495,26 +501,24 @@ void wifi_stop(void) {
 	s_sta_netif = NULL;
 }
 
-
 static bool connectRestart;
 void connectTask(void *pvParameters) {
 	int connectStep = 0;
 	int delay = 0;
 	int updateTimer = 0; //  CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
 	TaskHandle_t updateTaskHandle;
-	TaskStatus_t xTaskDetails;
 
 	s_wifi_event_group = xEventGroupCreate();
 
 	while (1) {
 
-		if ( connectRestart) {
+		if (connectRestart) {
 			connectRestart = false;
 			wifi_stop();
-			vTaskDelay(100/portTICK_PERIOD_MS);
+			vTaskDelay(100 / portTICK_PERIOD_MS);
 			DHCPoff = true;
 			doStop = false;
-			connectStatus =	CONNECTING;
+			connectStatus = CONNECTING;
 			connectStep = 1;
 			wifi_init_sta();
 			esp_wifi_connect();
@@ -620,19 +624,29 @@ void connectTask(void *pvParameters) {
 			else {
 				updateTimer--;
 				if ((updateTimer <= 0) || forceUpdate) {
+					staticIPisSet = false;
 					updateTimer = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60 * 10;
 					forceUpdate = false;
 					connectStep = 40;
 					connectStatus = CHECKFIRMWARE; // CONNECTING
 					esp_wifi_disconnect();
+					vTaskDelay(10);
 					if (esp_netif_dhcpc_start(s_sta_netif) == ESP_OK) {
 						enableFixedIP = false; // do connect with dhcp dns works  i hope
 					} else
 						ESP_LOGE(TAG, " error dhcp start");
 					esp_wifi_connect();
+				} else {
+					if (!staticIPisSet) {
+						ESP_LOGE(TAG, " static ip not set!"); // sometimes this does not happen??
+						enableFixedIP = true;
+						connectStep = 1;
+						esp_wifi_disconnect();
+						vTaskDelay(10);
+						esp_wifi_connect();
+					}
 				}
 			}
-
 			break;
 
 		case 40: // update with dhcp on
@@ -642,11 +656,10 @@ void connectTask(void *pvParameters) {
 				xTaskCreate(&updateTask, "updateTask", 2 * 8192, NULL, 1, &updateTaskHandle);
 				do {
 					vTaskDelay(100 / portTICK_PERIOD_MS);
-					vTaskGetInfo(updateTaskHandle, &xTaskDetails, pdFALSE, eInvalid);
-				} while (xTaskDetails.eCurrentState != eDeleted); // updateTask will delete itself after finishing
+				} while ( !updateTaskHasFinished);
 
+				ESP_LOGI(TAG, "updateTask has finished"); 
 				enableFixedIP = true;
-
 				connectStep = 1;
 				esp_wifi_disconnect();
 				esp_wifi_connect();
@@ -664,23 +677,12 @@ void connectTask(void *pvParameters) {
 			break;
 		}; // end switch step
 
-		vTaskDelay(100/portTICK_PERIOD_MS);
+		vTaskDelay(100 / portTICK_PERIOD_MS);
 	} // end while(1)
 }
 
-	// 	if  (error) {
-	// 		prescaler = 60 * 60; // check over 1 hour
-	// 	}
-	// 	do {
-	// 		vTaskDelay(1000 / portTICK_PERIOD_MS);
-	// 	} while (prescaler-- && !forceUpdate);
-	// 	forceUpdate = false;
-	// 	prescaler = CONFIG_CHECK_FIRMWARWE_UPDATE_INTERVAL * 60 * 60;
-
-	void wifiConnect(void) {
-		xTaskCreate(connectTask, "connectTask", configMINIMAL_STACK_SIZE * 5, NULL, 5, NULL);
-		g_pCGIs = CGIurls; // for file_server to read CGIurls
-	}
-	void restartWifi( void) {
-		connectRestart = true;
-	}
+void wifiConnect(void) {
+	xTaskCreate(connectTask, "connectTask", configMINIMAL_STACK_SIZE * 5, NULL, 5, NULL);
+	g_pCGIs = CGIurls; // for file_server to read CGIurls
+}
+void restartWifi(void) { connectRestart = true; }
