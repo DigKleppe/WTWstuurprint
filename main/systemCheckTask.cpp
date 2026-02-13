@@ -20,7 +20,7 @@
 
 static const char *TAG = "systemCheck";
 #define MOTORERRORREACTTIME 120 // seconds to make motorError permanent
-#define WIFITIMEOUT (30 * 60)	// reboot after this time in seconds
+#define WIFITIMEOUT (24 *60 * 60)	// reboot after this time in seconds
 #define PINGTIMEOUT (5 * 60)	// restart wifi after this time in seconds
 
 static int err;
@@ -61,7 +61,6 @@ void checkWifi(void) {
 		vTaskDelay(200 / portTICK_PERIOD_MS);
 		esp_restart();
 	}
-	//	}
 }
 
 // Task to check system status, e.g., temperature sensors and wifi

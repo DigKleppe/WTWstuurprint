@@ -102,7 +102,6 @@ extern "C" void app_main() {
 	xTaskCreate(motorControlTask, "motorC1", 8000, (void *)AFAN, 1, &taskHandles[2]);
  	xTaskCreate(motorControlTask, "motorC2", 8000, (void *)TFAN, 1, &taskHandles[3]);
 	xTaskCreate(brinkTask, "brinkTask", configMINIMAL_STACK_SIZE * 3, NULL, 1, &taskHandles[4]);
-//	xTaskCreate(&updateTask, "updateTask",2* 8192, NULL, 1, &taskHandles[5]);
 	xTaskCreate(&systemCheckTask, "systemCheckTask",configMINIMAL_STACK_SIZE * 2, NULL, 1, &taskHandles[6]);
 	initKeyPins();
  
